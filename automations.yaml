@@ -1,0 +1,102 @@
+- alias: Test Daily Temperature Extraction from OpenWeatherMap
+  trigger:
+    - platform: time
+      at: "12:13:00"
+  action:
+    - service: weather.get_forecasts
+      data:
+        type: daily
+      target:
+        entity_id: weather.openweathermap
+      response_variable: daily_data
+    - if:
+        - condition: template
+          value_template:
+            "{{ daily_data is not none and daily_data['weather.openweathermap'].forecast
+            is not none and daily_data['weather.openweathermap'].forecast|length >=
+            3 }}"
+      then:
+        - variables:
+            day_1: "{{ daily_data['weather.openweathermap'].forecast[0] }}"
+            day_2: "{{ daily_data['weather.openweathermap'].forecast[1] }}"
+            day_3: "{{ daily_data['weather.openweathermap'].forecast[2] }}"
+            today_high: "{{ day_1.temperature | round(1) }}"
+            today_low: "{{ day_1.templow | round(1) }}"
+            tomorrow_high: "{{ day_2.temperature | round(1) }}"
+            tomorrow_low: "{{ day_2.templow | round(1) }}"
+            day_after_tomorrow_high: "{{ day_3.temperature | round(1) }}"
+            day_after_tomorrow_low: "{{ day_3.templow | round(1) }}"
+
+        ########  Weather 3-Day Low Temp Check  ########
+        - service: telegram_bot.send_message
+          data:
+            message: |
+              {{ now().strftime('%Y-%m-%d') }}
+              3 Day ❄️ Low Temp Forecast
+              Today: {{ today_low }}°C
+              Tomorrow: {{ tomorrow_low }}°C
+              Day After Tomorrow: {{ day_after_tomorrow_low }}°C
+
+        ########  Weather 3-Day Extreme Weatehr Condition Check  ########
+        - variables:
+            rain:
+              "{{ (day_1.precipitation > 0 or day_2.precipitation > 0 or day_3.precipitation
+              > 0) | bool }}"
+            wind:
+              "{{ (day_1.wind_speed > 10 or day_2.wind_speed > 10 or day_3.wind_speed
+              > 10) | bool }}"
+            weather_message: >-
+              {% if rain or wind %}
+                {% if rain %}☔ There will be rain in the next 3 days.{% endif %}
+                {% if wind %}🍃 There will be notable wind in the next 3 days.{% endif %}
+              {% else %}
+                🌤️ Weather is normal.
+              {% endif %}
+        - service: telegram_bot.send_message
+          data:
+            message: "{{ weather_message }}"
+      else:
+        - service: logbook.log
+          data:
+            name: Daily Temp Test Failed
+            message: No sufficient forecast data available from OpenWeatherMap.
+        - service: telegram_bot.send_message
+          data:
+            message: "⚠️ Failed to fetch sufficient daily forecast data from OpenWeatherMap."
+
+  ########  Caldaia Shelly Relay Status Updates  ########
+  id: !secret shelly_id
+- id: "1738425166100"
+  alias: Caldaia Shelly Relay - Now ON
+  description: ""
+  triggers:
+    - type: turned_on
+      device_id: !secret shelly_caldaia_switch_device_id
+      entity_id: !secret shelly_caldaia_switch_entity_id
+      domain: switch
+      trigger: device
+  conditions: []
+  actions:
+    - action: telegram_bot.send_message
+      metadata: {}
+      data:
+        title: Caldaia Update
+        message: Caldaia Shelly Relay - Now ON
+  mode: single
+- id: "1738425278440"
+  alias: Caldaia Shelly Relay - Now OFF
+  description: ""
+  triggers:
+    - type: turned_off
+      device_id: !secret shelly_caldaia_switch_device_id
+      entity_id: !secret shelly_caldaia_switch_entity_id
+      domain: switch
+      trigger: device
+  conditions: []
+  actions:
+    - action: telegram_bot.send_message
+      metadata: {}
+      data:
+        title: Caldaia Update
+        message: Caldaia Shelly Relay - Now OFF
+  mode: single

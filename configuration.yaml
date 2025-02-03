@@ -1,0 +1,44 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Include other YAML files
+script: !include scripts.yaml
+scene: !include scenes.yaml
+automation: !include automations.yaml
+telegram_bot: !include telegram_bot.yaml
+# templates: !include templates.yaml
+# secrets: !include secrets.yaml
+
+# Telegram Bot
+#telegram_bot:
+#  - platform: polling
+#    api_key: !secret telegram_kermode_api_key
+#    allowed_chat_ids:
+#      - !secret telegram_kermode_chat_id
+
+# Notifier
+notify:
+  - platform: telegram
+    name: "kermode"
+    chat_id: !secret telegram_kermode_chat_id
+
+template:
+  - trigger:
+      - platform: time_pattern
+        hours: /1
+    action:
+      - service: weather.get_forecasts
+        data:
+          type: daily
+        target:
+          entity_id: weather.home
+        response_variable: daily
+    sensor:
+      - name: Temperature forecast next hour
+        unique_id: temperature_forecast_next_hour
+        state: "{{ daily['weather.home'].forecast[0].templow }}"
+        unit_of_measurement: °C

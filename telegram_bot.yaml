@@ -1,0 +1,6 @@
+# telegram_bot.yaml
+
+platform: polling
+api_key: !secret telegram_kermode_api_key
+allowed_chat_ids:
+  - !secret telegram_kermode_chat_id

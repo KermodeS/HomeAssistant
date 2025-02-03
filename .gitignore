@@ -1,0 +1,13 @@
+secrets.yaml
+.storage
+.cloud
+.google.token
+.homekit.state
+.uuid
+known_devices.yaml
+*.db
+*.log
+*.db-shm
+*.db-wal
+*.log.1
+*.log.fault
