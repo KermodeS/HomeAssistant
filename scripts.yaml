@@ -1,0 +1,40 @@
+# Add this to your scripts.yaml file
+
+# Script to manually trigger Grocy chores check
+check_grocy_chores:
+  alias: "Check Grocy Chores"
+  sequence:
+    - service: shell_command.run_grocy_script
+    - delay:
+        seconds: 5
+    - service: telegram_bot.send_message
+      data:
+        message: >-
+          {% set file_path = '/config/www/grocy_message.txt' %}
+          {% if file_path is file_exists %}
+            {{ read_file(file_path) }}
+          {% else %}
+            ⚠️ No Grocy message file found
+          {% endif %}
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.grocy_chores_message
+
+# Script to check Grocy script debug log
+check_grocy_debug:
+  alias: "Check Grocy Debug Log"
+  sequence:
+    - service: shell_command.check_grocy_debug
+    - delay:
+        seconds: 2
+    - service: telegram_bot.send_message
+      data:
+        message: >-
+          {% set file_path = '/config/www/grocy_debug_recent.txt' %}
+          {% if file_path is file_exists %}
+            Grocy debug log (recent entries):
+            
+            {{ read_file(file_path) }}
+          {% else %}
+            No debug log found
+          {% endif %}

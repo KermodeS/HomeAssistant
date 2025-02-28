@@ -1,7 +1,7 @@
 - alias: Test Daily Temperature Extraction from OpenWeatherMap
   trigger:
     - platform: time
-      at: "12:13:00"
+      at: "08:00:00"
   action:
     - service: weather.get_forecasts
       data:
@@ -37,7 +37,7 @@
               Tomorrow: {{ tomorrow_low }}°C
               Day After Tomorrow: {{ day_after_tomorrow_low }}°C
 
-        ########  Weather 3-Day Extreme Weatehr Condition Check  ########
+        ########  Weather 3-Day Extreme Weather Condition Check  ########
         - variables:
             rain:
               "{{ (day_1.precipitation > 0 or day_2.precipitation > 0 or day_3.precipitation
@@ -45,10 +45,20 @@
             wind:
               "{{ (day_1.wind_speed > 10 or day_2.wind_speed > 10 or day_3.wind_speed
               > 10) | bool }}"
+            snow: >-
+              {{ day_1.condition == 'snowy' or
+                  day_2.condition == 'snowy' or
+                  day_3.condition == 'snowy' }}
+
+            #snow:
+            #"{{ day_1.precipitation_type == 'rain' or
+            #day_2.precipitation_type == 'rain' or
+            #day_3.precipitation_type == 'rain' }}"
             weather_message: >-
               {% if rain or wind %}
                 {% if rain %}☔ There will be rain in the next 3 days.{% endif %}
                 {% if wind %}🍃 There will be notable wind in the next 3 days.{% endif %}
+                {% if snow %}❄️ Snow is expected in the next 3 days.{% endif %}
               {% else %}
                 🌤️ Weather is normal.
               {% endif %}
@@ -100,3 +110,18 @@
         title: Caldaia Update
         message: Caldaia Shelly Relay - Now OFF
   mode: single
+
+########  Grocy  ########
+# Simple automation for Grocy chores
+- id: grocy_chores_notification
+  alias: Grocy Chores Notification
+  description: "Send notifications about upcoming chores in Grocy"
+  trigger:
+    - platform: time
+      at: "08:00:00"
+    - platform: state
+      entity_id: input_boolean.debug_mode
+      to: "on"
+  action:
+    # Simply run the script which will handle everything
+    - service: shell_command.run_grocy_script

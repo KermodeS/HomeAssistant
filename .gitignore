@@ -1,13 +1,29 @@
+# Home Assistant specific files and caches
 secrets.yaml
-.storage
-.cloud
+.storage/
+.cloud/
 .google.token
 .homekit.state
 .uuid
 known_devices.yaml
 *.db
-*.log
 *.db-shm
 *.db-wal
+*.log
 *.log.1
 *.log.fault
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore other temporary or generated files
+*.tmp
+*.bak
+
+# Ignore virtual environments
+venv/
+.env
+
+# Ignore Home Assistant secrets (standard file)
+.secrets.yaml

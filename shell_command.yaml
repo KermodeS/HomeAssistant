@@ -1,0 +1,65 @@
+# shell_command.yaml with improved path handling
+#run_grocy_script: >
+#  python3 /config/python_scripts/grocy_chores.py 
+#  "{{ states('input_text.grocy_url') }}" 
+#  "{{ states('input_text.grocy_api_key') }}" 
+#  "YOUR_LONG_LIVED_ACCESS_TOKEN"
+
+# Simpler test command that doesn't rely on the full script
+#test_grocy_connection: >
+#  python3 -c "
+#  import requests, sys;
+#  print('Testing Grocy connection...');
+#  try:
+#      r = requests.get('{{ states(\"input_text.grocy_url\") }}',
+#                      headers={'GROCY-API-KEY': '{{ states(\"input_text.grocy_api_key\") }}',
+#                              'Content-Type': 'application/json'});
+#      print(f'Response: {r.status_code}');
+#      sys.exit(0 if r.status_code == 200 else 1);
+#  except Exception as e:
+#      print(f'Error: {str(e)}');
+#      sys.exit(1)
+#  "
+
+# Debug command to check logs
+check_grocy_log: bash -c 'tail -n 20 /config/www/grocy_debug.log || echo "No log file found"'
+
+# Simple test command
+test_python: python3 /config/python_scripts/test_grocy.py
+
+# Command to check if the test log file exists and show its contents
+check_test_log: bash -c 'cat /config/www/grocy_test.log || echo "Log file not found"'
+
+# Command to run debug script
+test_grocy_connection: >
+  python3 /config/python_scripts/debug_grocy.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+
+# Command to run improved debug script
+test_grocy_endpoints: >
+  python3 /config/python_scripts/improved_debug_grocy.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+  # Command for focused API testing
+
+#test_grocy_api: >
+#  python3 /config/python_scripts/grocy_api_test.py 
+#  "{{ states('input_text.grocy_url') }}" 
+#  "{{ states('input_text.grocy_api_key') }}"
+
+# shell_command.yaml - Updated for final script
+run_grocy_script: >
+  python3 /config/python_scripts/grocy_chores.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}" 
+  "{{ states('sensor.grocy_script_token') }}"
+  
+# Test commands
+test_grocy_api: >
+  python3 /config/python_scripts/grocy_api_test.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+
+# Debug command to check logs
+check_grocy_log: bash -c 'tail -n 50 /config/www/grocy_debug.log || echo "No log file found"'

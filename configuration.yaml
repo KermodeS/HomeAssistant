@@ -10,15 +10,6 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 automation: !include automations.yaml
 telegram_bot: !include telegram_bot.yaml
-# templates: !include templates.yaml
-# secrets: !include secrets.yaml
-
-# Telegram Bot
-#telegram_bot:
-#  - platform: polling
-#    api_key: !secret telegram_kermode_api_key
-#    allowed_chat_ids:
-#      - !secret telegram_kermode_chat_id
 
 # Notifier
 notify:
@@ -26,19 +17,63 @@ notify:
     name: "kermode"
     chat_id: !secret telegram_kermode_chat_id
 
+#template:
+#  - trigger:
+#      - platform: time_pattern
+#        hours: /1
+#    action:
+#      - service: weather.get_forecasts
+#        data:
+#          type: daily
+#        target:
+#          entity_id: weather.home
+#        response_variable: daily
+#    sensor:
+#      - name: Temperature forecast next hour
+#        unique_id: temperature_forecast_next_hour
+#        state: "{{ daily['weather.home'].forecast[0].templow }}"
+#        unit_of_measurement: °C
+
+# Template sensors with updated configuration
 template:
-  - trigger:
-      - platform: time_pattern
-        hours: /1
-    action:
-      - service: weather.get_forecasts
-        data:
-          type: daily
-        target:
-          entity_id: weather.home
-        response_variable: daily
-    sensor:
+  - sensor:
       - name: Temperature forecast next hour
         unique_id: temperature_forecast_next_hour
-        state: "{{ daily['weather.home'].forecast[0].templow }}"
+        state: >-
+          {% if states('weather.home') != 'unavailable' and
+                states('weather.home') != 'unknown' and
+                state_attr('weather.home', 'forecast') is not none and
+                state_attr('weather.home', 'forecast')[0] is not none and
+                state_attr('weather.home', 'forecast')[0].templow is not none %}
+            {{ state_attr('weather.home', 'forecast')[0].templow }}
+          {% else %}
+            0
+          {% endif %}
         unit_of_measurement: °C
+      - name: "Grocy Script Token"
+        state: !secret grocy_script_token
+        unique_id: grocy_script_token
+
+rest_command:
+  get_grocy_chores:
+    url: !secret grocy_api_url
+    method: GET
+    headers:
+      GROCY-API-KEY: !secret grocy_api_key
+      Content-Type: application/json
+    verify_ssl: true
+
+input_text:
+  grocy_url:
+    name: Grocy API URL
+    initial: !secret grocy_base_url
+  grocy_api_key:
+    name: Grocy API Key
+    initial: !secret grocy_api_key
+
+input_boolean:
+  debug_mode:
+    name: Debug Mode
+    initial: true
+
+shell_command: !include shell_command.yaml
