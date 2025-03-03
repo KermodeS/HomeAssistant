@@ -1,40 +1,57 @@
-# Add this to your scripts.yaml file
+# Updated scripts.yaml for modular architecture
 
-# Script to manually trigger Grocy chores check
+# Script to run Grocy chores check
+# In scripts.yaml
 check_grocy_chores:
   alias: "Check Grocy Chores"
   sequence:
-    - service: shell_command.run_grocy_script
-    - delay:
-        seconds: 5
-    - service: telegram_bot.send_message
+    - service: shell_command.run_grocy_module
       data:
-        message: >-
-          {% set file_path = '/config/www/grocy_message.txt' %}
-          {% if file_path is file_exists %}
-            {{ read_file(file_path) }}
-          {% else %}
-            ⚠️ No Grocy message file found
-          {% endif %}
-    - service: homeassistant.update_entity
-      target:
-        entity_id: sensor.grocy_chores_message
+        token: !secret grocy_script_token
 
-# Script to check Grocy script debug log
-check_grocy_debug:
-  alias: "Check Grocy Debug Log"
+# Script to get weather information
+check_weather:
+  alias: "Check Weather"
   sequence:
-    - service: shell_command.check_grocy_debug
+    - service: shell_command.run_weather_module
+
+# Scripts for debugging
+debug_grocy:
+  alias: "Debug Grocy Connection"
+  sequence:
+    - service: shell_command.debug_grocy_connection
     - delay:
         seconds: 2
+    - service: shell_command.check_grocy_log
     - service: telegram_bot.send_message
       data:
-        message: >-
-          {% set file_path = '/config/www/grocy_debug_recent.txt' %}
-          {% if file_path is file_exists %}
-            Grocy debug log (recent entries):
-            
-            {{ read_file(file_path) }}
-          {% else %}
-            No debug log found
-          {% endif %}
+        message: "Grocy debug completed. Check the logs for details."
+
+test_telegram_service:
+  alias: "Test Telegram Service"
+  sequence:
+    - service: shell_command.test_telegram
+    - delay:
+        seconds: 2
+    - service: shell_command.check_main_log
+
+# Script to check all logs
+check_all_logs:
+  alias: "Check All Logs"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        message: "Main Log:"
+    - service: shell_command.check_main_log
+    - delay:
+        seconds: 1
+    - service: telegram_bot.send_message
+      data:
+        message: "Grocy Log:"
+    - service: shell_command.check_grocy_log
+    - delay:
+        seconds: 1
+    - service: telegram_bot.send_message
+      data:
+        message: "Weather Log:"
+    - service: shell_command.check_weather_log
