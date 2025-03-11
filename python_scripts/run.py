@@ -74,6 +74,11 @@ def parse_arguments():
     # Device-specific arguments
     parser.add_argument("--device-entity", help="Device entity ID")
     parser.add_argument("--device-state", help="Device state (on/off)")
+
+    # Add after the device-specific arguments
+    # Voltage-specific arguments
+    parser.add_argument("--voltage-entity", help="Voltage sensor entity ID")
+    parser.add_argument("--previous-state-entity", help="Entity ID that tracks previous alarm state")
     
     return parser.parse_args()
 
@@ -112,6 +117,23 @@ def run_device(args):
     logger.section("Running Device Module")
     return notify_shelly_caldaia_status(args.hass_url, args.hass_token, args.device_entity, args.device_state)
 
+def run_voltage(args):
+    """Run the Voltage monitoring module"""
+    if not config_manager.is_enabled('voltage_monitoring.enabled'):
+        logger.info("Voltage monitoring is disabled in configuration")
+        return False
+    
+    if not args.voltage_entity:
+        logger.error("Voltage entity ID is required for voltage mode")
+        return False
+    
+    logger.section("Running Voltage Monitoring Module")
+    
+    # Handle previous state entity if provided
+    previous_state_entity = args.previous_state_entity if hasattr(args, 'previous_state_entity') else None
+    
+    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, previous_state_entity)
+
 def main():
     """Main function to run the selected automation"""
     try:
@@ -132,6 +154,9 @@ def main():
             weather_success = run_weather(args) if config_manager.is_enabled('weather.enabled') else True
             device_success = run_device(args) if config_manager.is_enabled('devices.enabled') else True
             success = grocy_success and weather_success and device_success
+        elif args.mode == "voltage": # Crystal spiral alarm
+            success = run_voltage(args)
+        # Also add it to the "all" mode if you want
         else:
             logger.error(f"Unknown mode: {args.mode}")
             success = False

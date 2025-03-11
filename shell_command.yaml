@@ -1,17 +1,24 @@
 # Updated shell_command.yaml for use with the updated run_wrapper.sh
 
 # Main commands for regular operation - using the wrapper script
+#run_grocy_module: >
+#  /bin/bash /config/python_scripts/run_wrapper.sh
+#  --mode grocy
+#  --hass-token "{{ states('sensor.grocy_script_token') }}"
+#  --grocy-url "{{ states('input_text.grocy_url') }}"
+#  --grocy-api-key "{{ states('input_text.grocy_api_key') }}"
+
 run_grocy_module: >
   /bin/bash /config/python_scripts/run_wrapper.sh 
   --mode grocy
-  --hass-token "{{ states('sensor.grocy_script_token') }}"
-  --grocy-url "{{ states('input_text.grocy_url') }}" 
-  --grocy-api-key "{{ states('input_text.grocy_api_key') }}"
+  --hass-token "{{ states('sensor.grocy_script_token')|default('') }}"
+  --grocy-url "{{ states('input_text.grocy_url')|default('http://localhost:9192') }}" 
+  --grocy-api-key "{{ states('input_text.grocy_api_key')|default('') }}"
 
 run_weather_module: >
   /bin/bash /config/python_scripts/run_wrapper.sh 
   --mode weather
-  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --hass-token "{{ states('sensor.grocy_script_token')|default('') }}"
   --weather-entity "weather.openweathermap"
 
 # Device monitoring commands
@@ -78,12 +85,6 @@ check_main_log: >
 check_wrapper_log: >
   bash -c 'cat /config/www/logs/wrapper.log 2>/dev/null | tail -n 50 || echo "No log file found"'
 
-check_grocy_run_log: >
-  bash -c 'cat /config/www/logs/grocy_run.log 2>/dev/null | tail -n 50 || echo "No log file found"'
-
-check_weather_run_log: >
-  bash -c 'cat /config/www/logs/weather_run.log 2>/dev/null | tail -n 50 || echo "No log file found"'
-
 # Manual test commands
 test_grocy_direct: >
   cd /config/python_scripts && python3 run.py --mode grocy --hass-token "{{ states('sensor.grocy_script_token') }}" --grocy-url "{{ states('input_text.grocy_url') }}" --grocy-api-key "{{ states('input_text.grocy_api_key') }}"
@@ -121,3 +122,49 @@ check_weather_service_log: >
 
 check_weather_entity_log: >
   bash -c 'cat /config/www/logs/weather_entity.log 2>/dev/null || echo "No log file found"'
+
+# Voltage monitoring commands
+check_voltage_levels: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode voltage
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --voltage-entity "{{ states('input_text.voltage_sensor_entity') }}"
+  --previous-state-entity "input_boolean.voltage_alarm_active"
+  > /config/www/logs/voltage_run.log 2>&1
+
+test_voltage_monitoring: >
+  python3 /config/python_scripts/debug/voltage_debug.py
+  "{{ states('sensor.grocy_script_token') }}"
+  "{{ states('input_text.voltage_sensor_entity') }}"
+  > /config/www/logs/voltage_test.log 2>&1
+
+check_alarm_voltage_log: >
+  bash -c 'cat /config/www/logs/alarm_voltage.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+# Log management commands
+run_log_manager: >
+  python3 /config/python_scripts/log_manager.py
+  > /config/www/logs/log_manager.log 2>&1
+
+# Automation management commands
+check_automation_status: >
+  python3 /config/python_scripts/automation_check.py
+  > /config/www/logs/automation_check.log 2>&1
+
+test_all_automations: >
+  python3 /config/python_scripts/automation_check.py test all
+  > /config/www/logs/automation_test.log 2>&1
+
+test_grocy_automation: >
+  python3 /config/python_scripts/automation_check.py test grocy
+  > /config/www/logs/grocy_test.log 2>&1
+
+test_weather_automation: >
+  python3 /config/python_scripts/automation_check.py test weather
+  > /config/www/logs/weather_test.log 2>&1
+
+check_weather_run_log: >
+  /bin/bash /config/python_scripts/check_logs.sh
+
+check_grocy_run_log: >
+  /bin/bash /config/python_scripts/check_logs.sh

@@ -2,8 +2,14 @@
 - alias: Daily Weather Forecast
   trigger:
     - platform: time
-      at: "13:08:00"
+      at: "08:05:00"
   action:
+    - service: shell_command.run_weather_module
+    # Add retry after 1 minute if failed
+    - delay: "00:01:00"
+    - service: shell_command.check_weather_run_log
+    - condition: template
+      value_template: "{{ is_state('sensor.weather_run_status', 'failed') }}"
     - service: shell_command.run_weather_module
 
 ########  Caldaia Shelly Relay Status Updates  ########
@@ -41,11 +47,17 @@
   description: "Send notifications about upcoming chores in Grocy"
   trigger:
     - platform: time
-      at: "13:08:00"
+      at: "08:06:00"
     - platform: state
       entity_id: input_boolean.debug_mode
       to: "on"
   action:
+    - service: shell_command.run_grocy_module
+    # Add retry after 1 minute if failed
+    - delay: "00:01:00"
+    - service: shell_command.check_grocy_run_log
+    - condition: template
+      value_template: "{{ is_state('sensor.grocy_run_status', 'failed') }}"
     - service: shell_command.run_grocy_module
 
 ########  Debug Mode Toggle  ########
@@ -60,3 +72,37 @@
       data:
         message: >-
           Debug mode is now {{ states('input_boolean.debug_mode') }}
+
+########  Voltage Monitoring  ########
+- id: check_voltage_levels
+  alias: Check Voltage Alarm Levels
+  description: "Monitor voltage levels and send alarms if thresholds are exceeded"
+  trigger:
+    - platform: time_pattern
+      minutes: "/5" # Run every 5 minutes
+  condition:
+    - condition: template
+      value_template: "{{ is_state('input_boolean.enable_voltage_monitoring', 'on') }}"
+  action:
+    - service: shell_command.check_voltage_levels
+  mode: single # Fix from throttle to single
+
+########  Log Management  ########
+- id: log_management
+  alias: Log Management
+  description: "Cleanup and rotate log files once a day"
+  trigger:
+    - platform: time
+      at: "04:00:00"
+  action:
+    - service: shell_command.run_log_manager
+
+########  Automation Monitoring  ########
+- id: monitor_automations
+  alias: Monitor Automations
+  description: "Check if automations run successfully, and retry if needed"
+  trigger:
+    - platform: time_pattern
+      hours: "/12"
+  action:
+    - service: shell_command.check_automation_status
