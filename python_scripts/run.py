@@ -45,6 +45,7 @@ try:
     from services.grocy import notify_chores
     from services.weather import process_weather_data
     from services.devices import monitor_device_change, notify_shelly_caldaia_status
+    from services.alarm_voltage_measure import check_voltage_alarm
     
     logger.info("Successfully imported all modules")
 except ImportError as e:
@@ -57,7 +58,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run Home Assistant automations")
     
     # Add the mode argument
-    parser.add_argument("--mode", choices=["grocy", "weather", "device", "all"],
+    parser.add_argument("--mode", choices=["grocy", "weather", "device", "all", "voltage", "alarm_voltage"],
                         help="Automation mode to run", required=True)
     
     # Common arguments
@@ -79,7 +80,8 @@ def parse_arguments():
     # Voltage-specific arguments
     parser.add_argument("--voltage-entity", help="Voltage sensor entity ID")
     parser.add_argument("--previous-state-entity", help="Entity ID that tracks previous alarm state")
-    
+    parser.add_argument("--voltage-state-entity", help="Entity ID that tracks voltage alarm state")
+
     return parser.parse_args()
 
 def run_grocy(args):
@@ -145,12 +147,13 @@ def run_alarm_voltage(args):
         return False
     
     logger.section("Running Alarm Voltage Module")
+    
+    # Import here to avoid circular imports
     from services.alarm_voltage_measure import check_voltage_alarm
-    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, args.voltage_state_entity)
-
-# In the main function's mode selection:
-elif args.mode == "alarm_voltage":
-    success = run_alarm_voltage(args)
+    
+    state_entity = args.voltage_state_entity if hasattr(args, 'voltage_state_entity') else None
+    
+    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, state_entity)
 
 def main():
     """Main function to run the selected automation"""
@@ -172,9 +175,10 @@ def main():
             weather_success = run_weather(args) if config_manager.is_enabled('weather.enabled') else True
             device_success = run_device(args) if config_manager.is_enabled('devices.enabled') else True
             success = grocy_success and weather_success and device_success
-        elif args.mode == "voltage": # Crystal spiral alarm
+        elif args.mode == "voltage":
             success = run_voltage(args)
-        # Also add it to the "all" mode if you want
+        elif args.mode == "alarm_voltage":
+            success = run_alarm_voltage(args)
         else:
             logger.error(f"Unknown mode: {args.mode}")
             success = False
