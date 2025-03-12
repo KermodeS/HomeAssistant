@@ -39,7 +39,7 @@ input_boolean:
     initial: false
   voltage_alarm_active:
     name: Voltage Alarm Active
-    initial: off
+    initial: false
     icon: mdi:alarm-light
   enable_voltage_monitoring:
     name: Enable Voltage Monitoring

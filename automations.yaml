@@ -74,18 +74,19 @@
           Debug mode is now {{ states('input_boolean.debug_mode') }}
 
 ########  Voltage Monitoring  ########
-- id: check_voltage_levels
+# Voltage Alarm Monitoring
+- id: "voltage_alarm_monitoring"
   alias: Check Voltage Alarm Levels
-  description: "Monitor voltage levels and send alarms if thresholds are exceeded"
+  description: "Check Shelly UNI voltage levels and notify if outside thresholds"
   trigger:
     - platform: time_pattern
-      minutes: "/5" # Run every 5 minutes
-  condition:
-    - condition: template
-      value_template: "{{ is_state('input_boolean.enable_voltage_monitoring', 'on') }}"
+      seconds: "/5"  # Check every 5 seconds (increased slightly from 3 to reduce system load)
+    - platform: state
+      entity_id: sensor.shellyplusuni_cc7b5c887520_voltmeter
+      for: "00:00:03"  # 3 second debounce
   action:
-    - service: shell_command.check_voltage_levels
-  mode: single # Fix from throttle to single
+    - service: shell_command.check_alarm_voltage  # Use the regular command now that we know it works
+  mode: single
 
 ########  Log Management  ########
 - id: log_management

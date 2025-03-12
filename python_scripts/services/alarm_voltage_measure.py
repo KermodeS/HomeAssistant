@@ -97,12 +97,15 @@ def check_voltage_alarm(hass_url, hass_token, entity_id, previous_state_entity_i
         if previous_state_entity_id:
             previous_alarm_state = get_previous_alarm_state(hass_url, hass_token, previous_state_entity_id)
             logger.info(f"Previous alarm state: {previous_alarm_state}")
+            logger.info(f"Current voltage: {current_voltage}V, High threshold: {high_threshold}V, Low threshold: {low_threshold}V")
+
         
         # Check voltage against thresholds
         if current_voltage >= high_threshold and not previous_alarm_state:
             # Voltage is above high threshold and alarm wasn't already triggered
             logger.info(f"ALARM: Voltage ({current_voltage}V) is above threshold ({high_threshold}V)")
-            
+            logger.info("✅ ALARM CONDITION MET: Voltage above threshold and not previously alarmed")
+
             # Send alarm notification
             message = f"🚨 ALARM: Voltage level is {current_voltage}V, which is above the threshold of {high_threshold}V"
             send_telegram(message, hass_token, title="Voltage Alarm Triggered")
@@ -116,7 +119,8 @@ def check_voltage_alarm(hass_url, hass_token, entity_id, previous_state_entity_i
         elif current_voltage <= low_threshold and previous_alarm_state:
             # Voltage dropped below low threshold and alarm was previously triggered
             logger.info(f"RESET: Voltage ({current_voltage}V) is below reset threshold ({low_threshold}V)")
-            
+            logger.info("✅ RESET CONDITION MET: Voltage below threshold and previously alarmed")
+
             # Send reset notification
             message = f"✅ RESET: Voltage level is {current_voltage}V, which is below the reset threshold of {low_threshold}V"
             send_telegram(message, hass_token, title="Voltage Alarm Reset")
@@ -129,6 +133,12 @@ def check_voltage_alarm(hass_url, hass_token, entity_id, previous_state_entity_i
         else:
             # No state change needed
             logger.info(f"No alarm condition: Current voltage is {current_voltage}V")
+
+            if current_voltage >= high_threshold:
+                logger.info("❌ Voltage above threshold BUT already alarmed")
+            if current_voltage <= low_threshold:
+                logger.info("❌ Voltage below threshold BUT not previously alarmed")
+            logger.info("No state change needed")
             return True
             
     except Exception as e:

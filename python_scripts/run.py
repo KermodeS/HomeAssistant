@@ -134,6 +134,24 @@ def run_voltage(args):
     
     return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, previous_state_entity)
 
+def run_alarm_voltage(args):
+    """Run the Alarm Voltage measurement module"""
+    if not config_manager.is_enabled('voltage_monitoring.enabled'):
+        logger.info("Voltage monitoring is disabled in configuration")
+        return False
+    
+    if not args.voltage_entity:
+        logger.error("Voltage entity ID is required for alarm voltage mode")
+        return False
+    
+    logger.section("Running Alarm Voltage Module")
+    from services.alarm_voltage_measure import check_voltage_alarm
+    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, args.voltage_state_entity)
+
+# In the main function's mode selection:
+elif args.mode == "alarm_voltage":
+    success = run_alarm_voltage(args)
+
 def main():
     """Main function to run the selected automation"""
     try:

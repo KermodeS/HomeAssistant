@@ -168,3 +168,28 @@ check_weather_run_log: >
 
 check_grocy_run_log: >
   /bin/bash /config/python_scripts/check_logs.sh
+
+test_telegram_alarm: >
+  python3 /config/python_scripts/debug/test_telegram.py
+  {{ states('sensor.grocy_script_token') }}
+
+check_alarm_voltage: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode alarm_voltage
+  --hass-token="{{states('sensor.grocy_script_token')}}"
+  --voltage-entity="sensor.shellyplusuni_cc7b5c887520_voltmeter"
+  --voltage-state-entity="input_boolean.voltage_alarm_active"
+
+check_alarm_voltage_logs: >
+  bash -c 'cat /config/www/logs/alarm_voltage.log 2>/dev/null | tail -n 100 || echo "No log file found"'
+
+test_alarm_voltage_direct: >
+  python3 /config/python_scripts/debug/test_alarm_voltage.py
+  {{ states('sensor.grocy_script_token') }}
+  sensor.shellyplusuni_cc7b5c887520_voltmeter
+  input_boolean.voltage_alarm_active
+
+test_alarm_reset: >
+  python3 /config/python_scripts/debug/test_alarm_reset.py
+  {{ states('sensor.grocy_script_token') }}
+  input_boolean.voltage_alarm_active

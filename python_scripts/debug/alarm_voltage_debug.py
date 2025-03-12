@@ -162,6 +162,38 @@ def simulate_alarm_logic(hass_url, hass_token, entity_id, high_threshold=9.0, lo
     except Exception as e:
         logger.error(f"Error simulating alarm logic: {str(e)}")
 
+def test_telegram_service(hass_url, hass_token):
+    """
+    Test if the Telegram service is working
+    
+    Args:
+        hass_url: Home Assistant URL
+        hass_token: Home Assistant long-lived access token
+    """
+    logger.section("Testing Telegram Service")
+    
+    try:
+        url = f"{hass_url}/api/services/telegram_bot/send_message"
+        headers = {
+            "Authorization": f"Bearer {hass_token}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "message": "🧪 Test message from alarm voltage debug"
+        }
+        
+        logger.info(f"Sending test message via Telegram API")
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        
+        if response.status_code == 200:
+            logger.info("✅ Telegram test successful!")
+        else:
+            logger.error(f"❌ Telegram test failed: {response.status_code}")
+            logger.debug(f"Response: {response.text}")
+            
+    except Exception as e:
+        logger.error(f"Error testing Telegram: {str(e)}")
 
 def main():
     """Main function to run tests based on command line arguments"""

@@ -275,7 +275,17 @@ Check Home Assistant automation history
 Review /config/www/logs/summary.log regularly
 Run python3 /config/python_scripts/automation_check.py monthly
 
+## Voltage Alarm Monitoring
 
+The system monitors voltage from a Shelly Plus UNI device and sends notifications when voltage crosses defined thresholds:
+
+- When voltage rises above 9.0V, an alarm notification is sent
+- When voltage falls below 3.0V after an alarm, a reset notification is sent
+
+### Components:
+- `python_scripts/services/alarm_voltage_measure.py`: Main functionality
+- `python_scripts/debug/alarm_voltage_debug.py`: Debug utilities
+- `input_boolean.voltage_alarm_active`: Tracks alarm state
 
 Credits
 This modular automation system was created for Home Assistant Green to provide a flexible and maintainable approach to automations.

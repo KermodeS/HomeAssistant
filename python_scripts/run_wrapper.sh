@@ -37,6 +37,8 @@ else
 fi
 
 echo "$TIMESTAMP: Using log file: $LOG_FILE" >> "$LOG_DIR/wrapper.log"
+echo "$TIMESTAMP: Debug - Checking if mode $MODE is valid" >> "$LOG_DIR/wrapper.log"
+echo "$TIMESTAMP: Debug - Full command: /usr/bin/python3 \"${SCRIPT_DIR}/run.py\" $@" >> "$LOG_DIR/wrapper.log"
 
 # Run the actual Python script with all arguments and redirect output to the log file
 echo "===== STARTING RUN AT $TIMESTAMP =====" > "$LOG_FILE"
