@@ -45,6 +45,8 @@ try:
     from services.grocy import notify_chores
     from services.weather import process_weather_data
     from services.devices import monitor_device_change, notify_shelly_caldaia_status
+    from services.alarm_voltage_measure import check_voltage_alarm
+    from services.grocy_dashboard import update_dashboard_data
     
     logger.info("Successfully imported all modules")
 except ImportError as e:
@@ -57,7 +59,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run Home Assistant automations")
     
     # Add the mode argument
-    parser.add_argument("--mode", choices=["grocy", "weather", "device", "all"],
+    parser.add_argument("--mode", choices=["grocy", "weather", "device", "alarm_voltage", "grocy_dashboard", "all"],
                         help="Automation mode to run", required=True)
     
     # Common arguments
@@ -74,7 +76,13 @@ def parse_arguments():
     # Device-specific arguments
     parser.add_argument("--device-entity", help="Device entity ID")
     parser.add_argument("--device-state", help="Device state (on/off)")
-    
+
+    # Add after the device-specific arguments
+    # Voltage-specific arguments
+    parser.add_argument("--voltage-entity", help="Voltage sensor entity ID")
+    parser.add_argument("--previous-state-entity", help="Entity ID that tracks previous alarm state")
+    parser.add_argument("--voltage-state-entity", help="Entity ID that tracks voltage alarm state")
+
     return parser.parse_args()
 
 def run_grocy(args):
@@ -89,6 +97,50 @@ def run_grocy(args):
     
     logger.section("Running Grocy Module")
     return notify_chores(args.grocy_url, args.grocy_api_key, args.hass_token, args.hass_url)
+
+def run_grocy_dashboard(args):
+    """Run the Grocy dashboard data provider"""
+    logger.section("Running Grocy Dashboard Provider")
+    
+    # Debug: Log all arguments
+    logger.info(f"Received arguments: {vars(args)}")
+    
+    # Check feature flag with detailed logging
+    dashboard_enabled = config_manager.is_enabled('grocy.dashboard_enabled')
+    logger.info(f"grocy.dashboard_enabled flag: {dashboard_enabled}")
+    
+    if not dashboard_enabled:
+        logger.info("Grocy dashboard is disabled in configuration")
+        return False
+    
+    # Check required arguments with detailed logging
+    has_grocy_url = bool(args.grocy_url)
+    has_grocy_api_key = bool(args.grocy_api_key)
+    
+    logger.info(f"Has grocy_url: {has_grocy_url}, Has grocy_api_key: {has_grocy_api_key}")
+    
+    if not has_grocy_url or not has_grocy_api_key:
+        logger.error("Grocy URL and API key are required for Grocy dashboard")
+        return False
+    
+    try:
+        # Import with explicit error handling
+        logger.info("Attempting to import update_dashboard_data function")
+        from services.grocy_dashboard import update_dashboard_data
+        logger.info("Successfully imported update_dashboard_data function")
+        
+        # Call the function with explicit error handling
+        logger.info(f"Calling update_dashboard_data with URL: {args.grocy_url[:10]}... and API key: {args.grocy_api_key[:5]}...")
+        result = update_dashboard_data(args.grocy_url, args.grocy_api_key)
+        logger.info(f"update_dashboard_data returned: {result}")
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error in run_grocy_dashboard: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return False
 
 def run_weather(args):
     """Run the Weather module"""
@@ -112,6 +164,42 @@ def run_device(args):
     logger.section("Running Device Module")
     return notify_shelly_caldaia_status(args.hass_url, args.hass_token, args.device_entity, args.device_state)
 
+def run_voltage(args):
+    """Run the Voltage monitoring module"""
+    if not config_manager.is_enabled('voltage_monitoring.enabled'):
+        logger.info("Voltage monitoring is disabled in configuration")
+        return False
+    
+    if not args.voltage_entity:
+        logger.error("Voltage entity ID is required for voltage mode")
+        return False
+    
+    logger.section("Running Voltage Monitoring Module")
+    
+    # Handle previous state entity if provided
+    previous_state_entity = args.previous_state_entity if hasattr(args, 'previous_state_entity') else None
+    
+    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, previous_state_entity)
+
+def run_alarm_voltage(args):
+    """Run the Alarm Voltage measurement module"""
+    if not config_manager.is_enabled('voltage_monitoring.enabled'):
+        logger.info("Voltage monitoring is disabled in configuration")
+        return False
+    
+    if not args.voltage_entity:
+        logger.error("Voltage entity ID is required for alarm voltage mode")
+        return False
+    
+    logger.section("Running Alarm Voltage Module")
+    
+    # Import here to avoid circular imports
+    from services.alarm_voltage_measure import check_voltage_alarm
+    
+    state_entity = args.voltage_state_entity if hasattr(args, 'voltage_state_entity') else None
+    
+    return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, state_entity)
+
 def main():
     """Main function to run the selected automation"""
     try:
@@ -132,6 +220,12 @@ def main():
             weather_success = run_weather(args) if config_manager.is_enabled('weather.enabled') else True
             device_success = run_device(args) if config_manager.is_enabled('devices.enabled') else True
             success = grocy_success and weather_success and device_success
+        elif args.mode == "voltage":
+            success = run_voltage(args)
+        elif args.mode == "alarm_voltage":
+            success = run_alarm_voltage(args)
+        elif args.mode == "grocy_dashboard":
+            success = run_grocy_dashboard(args)
         else:
             logger.error(f"Unknown mode: {args.mode}")
             success = False

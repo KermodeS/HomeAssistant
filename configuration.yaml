@@ -29,11 +29,30 @@ input_text:
   shelly_caldaia_entity:
     name: Shelly Caldaia Entity
     initial: !secret shelly_caldaia_switch_entity_id
+  voltage_sensor_entity:
+    name: Voltage Sensor Entity
+    initial: sensor.shelly_uni_voltage
 
 input_boolean:
   debug_mode:
     name: Debug Mode
     initial: false
+  voltage_alarm_active:
+    name: Voltage Alarm Active
+    initial: false
+    icon: mdi:alarm-light
+  enable_voltage_monitoring:
+    name: Enable Voltage Monitoring
+    initial: off
+    icon: mdi:flash-alert
+
+input_number:
+  shelly_last_changed:
+    name: Shelly Last Changed Timestamp
+    min: 0
+    max: 9999999999
+    step: 1
+    mode: box
 
 # Template sensors
 template:
@@ -47,19 +66,126 @@ template:
         state: >-
           {% set log_content = states('sensor.grocy_log_content') %}
           {% if log_content and log_content != 'unknown' and log_content != 'unavailable' %}
-            {% set matches = log_content | regex_findall('Sent notification with (\\d+) chores') %}
-            {% if matches %}
-              {{ matches | last | default('No chores') }}
-            {% else %}
-              No chores found in log
-            {% endif %}
+            {% set lines = log_content.split('\n') %}
+            {% for line in lines %}
+              {% if 'Sent notification with' in line %}
+                {% set chores = line.split('Sent notification with')[1].split('chores')[0].strip() %}
+                {% if chores %}
+                  {{ chores }}
+                  {% break %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            No chores found in log
           {% else %}
             No log data available
           {% endif %}
+      # Add these below your existing sensors
+      - name: "Grocy Run Status"
+        unique_id: grocy_run_status
+        state: "unknown"
+
+      ########  For Grocy Maintenence Dashboard ########
+      - name: "grocy_organized_chores"
+        unique_id: grocy_organized_chores
+        state: >-
+          {% if states('sensor.grocy_log_content') != 'unknown' and states('sensor.grocy_log_content') != 'unavailable' %}
+            Available
+          {% else %}
+            unavailable
+          {% endif %}
+        icon: mdi:calendar-check
+        attributes:
+          chores: >-
+            [
+              {% set chores_found = false %}
+              {% set log_content = states('sensor.grocy_log_content') %}
+              {% if log_content and log_content != 'unknown' and log_content != 'unavailable' %}
+                {% set current_chore = namespace(data={}) %}
+                {% set lines = log_content.split('\n') %}
+                {% for line in lines %}
+                  {% if 'Chore ' in line and 'userfields:' in line %}
+                    {% set userfields_str = line.split('userfields:')[1] | trim %}
+                    {% if userfields_str %}
+                      {% set userfields_dict = namespace(data={}) %}
+                      {% if "Territorio" in userfields_str %}
+                        {% set territorio = userfields_str.split("'Territorio'")[1].split("'")[1] %}
+                        {% set userfields_dict.data = userfields_dict.data | combine({'Territorio': territorio}) %}
+                      {% endif %}
+                      {% if "Luogo_di_lavoro" in userfields_str %}
+                        {% set luogo = userfields_str.split("'Luogo_di_lavoro'")[1].split("'")[1] %}
+                        {% set userfields_dict.data = userfields_dict.data | combine({'Luogo_di_lavoro': luogo}) %}
+                      {% endif %}
+                      
+                      {% set current_chore.data = {'assigned_to': userfields_dict.data.Territorio, 'luogo_di_lavoro': userfields_dict.data.Luogo_di_lavoro} %}
+                    {% endif %}
+                  {% endif %}
+                  
+                  {% if 'Added details for chore ' in line %}
+                    {% set chore_name = line.split('Added details for chore ')[1] | trim %}
+                    {% set current_chore.data = current_chore.data | combine({'name': chore_name}) %}
+                  {% endif %}
+                  
+                  {% if 'Extracted main section: ' in line %}
+                    {% set description = line.split('Extracted main section: ')[1] | trim %}
+                    {% set current_chore.data = current_chore.data | combine({'description': description}) %}
+                  {% endif %}
+                  
+                  {% if current_chore.data.name is defined and current_chore.data.description is defined and current_chore.data.assigned_to is defined %}
+                    {% set chores_found = true %}
+                    {
+                      "assigned_to": "{{ current_chore.data.assigned_to }}",
+                      "luogo_di_lavoro": "{{ current_chore.data.luogo_di_lavoro }}",
+                      "name": "{{ current_chore.data.name }}",
+                      "date": "Monday, Mar 18",
+                      "description": "{{ current_chore.data.description }}"
+                    }{% if not loop.last %},{% endif %}
+                    {% set current_chore.data = {} %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              {% if not chores_found %}
+                {
+                  "assigned_to": "Ognidove",
+                  "luogo_di_lavoro": "Tempio",
+                  "name": "Ispezionare e pulire i filtri dell'acqua",
+                  "date": "Monday, Mar 18",
+                  "description": "Open and clean the water filter containers and inspect the health of the filters."
+                }
+              {% endif %}
+            ]
+
+      - name: "Weather Run Status"
+        unique_id: weather_run_status
+        state: "unknown"
+
+      - name: "Shelly Connectivity"
+        unique_id: shelly_connectivity
+        state: >-
+          {% if is_state('switch.shelly_relay_caldaia', 'unavailable') %}
+            unavailable
+          {% else %}
+            connected
+          {% endif %}
+        attributes:
+          last_unavailable: >-
+            {% set lookback = now().timestamp() - 60 %}
+            {% set history = state_attr('sensor.shellyplus1_fcb467bef114_status', 'history') | default([]) %}
+            {% if history | selectattr('state', 'eq', 'unavailable') | list %}
+              recent
+            {% else %}
+              not_recent
+            {% endif %}
+
+  - sensor:
+      - name: "Shelly Last Changed"
+        unique_id: shelly_last_changed
+        state: >-
+          {{ states('input_number.shelly_last_changed') | int }}
 
 command_line:
   - sensor:
       name: "Grocy Log Content"
       unique_id: grocy_log_content
-      command: "cat /config/www/logs/grocy.log 2>/dev/null || echo 'No log file'"
+      command: "cat /config/www/logs/grocy.log 2>/dev/null | tail -n 10 | grep -m 1 'Sent notification' || echo 'No notifications found'"
       scan_interval: 300

@@ -13,6 +13,7 @@ devices:
 grocy:
   enabled: true # Master switch for Grocy integration
   chores_notification: true # Daily chores notifications
+  dashboard_enabled: true  # Enable the Grocy dashboard
 
 notifications:
   telegram_enabled: true # Enable/disable all Telegram notifications
@@ -20,3 +21,11 @@ notifications:
 
 debug:
   verbose_logging: true # Enable detailed logging
+
+voltage_monitoring:
+  enabled: true  # Master switch for voltage monitoring
+  uni_alarm: true  # Enable UNI voltage alarm specifically
+  high_threshold: 9.0  # High voltage threshold (V)
+  low_threshold: 3.0  # Low voltage threshold (V)
+
+

@@ -9,3 +9,4 @@ from common import get_logger, send_telegram, config_manager
 from services.grocy import notify_chores
 from services.weather import process_weather_data
 from services.devices import monitor_device_change, notify_shelly_caldaia_status
+from services.alarm_voltage_measure import check_voltage_alarm

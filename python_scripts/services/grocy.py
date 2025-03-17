@@ -163,7 +163,34 @@ def get_upcoming_chores(grocy_url, grocy_api_key, days_ahead=14):
                                             "assigned_to": assigned_name,
                                             "description": "",  # We'll get this from objects/chores if needed
                                             "userfields": None,  # We'll get this from objects/chores if needed
-                                            "sections": {}      # We'll extract sections from the description
+                                            "sections": {},      # We'll extract sections from the description
+                                            "overdue": False,    # Add overdue flag
+                                            "days_overdue": 0    # Add days overdue counter
+                                        })    
+                                    # Check for overdue chores (due date is before today)
+                                    elif chore_date < today:
+                                        logger.info(f"Found overdue chore: {chore.get('chore_name', 'Unknown')}")
+                                        
+                                        # Format due date to be more readable
+                                        due_date = chore_date.strftime("%A, %b %d")
+                                        
+                                        # Calculate days overdue
+                                        days_overdue = (today - chore_date).days
+                                        
+                                        # Extract assigned user
+                                        assigned_to = chore.get("next_execution_assigned_user", {})
+                                        assigned_name = assigned_to.get("display_name", "Unassigned") if isinstance(assigned_to, dict) else "Unassigned"
+                                        
+                                        # Add to upcoming chores list with overdue flag
+                                        upcoming_chores.append({
+                                            "name": chore.get("chore_name", "Unknown chore"),
+                                            "date": due_date,
+                                            "assigned_to": assigned_name,
+                                            "description": "",  # We'll get this from objects/chores if needed
+                                            "userfields": None,  # We'll get this from objects/chores if needed
+                                            "sections": {},      # We'll extract sections from the description
+                                            "overdue": True,     # Mark as overdue
+                                            "days_overdue": days_overdue  # Add days overdue
                                         })
                                 except Exception as e:
                                     logger.error(f"Error processing chore date for {chore.get('chore_name', 'Unknown')}: {str(e)}")
@@ -237,60 +264,133 @@ def format_chores_message(chores):
     if not chores:
         return "✅ No chores scheduled for the next 14 days."
     
-    message = "📋 Upcoming chores for the next 14 days:\n\n"
+    # Count overdue chores
+    overdue_chores = [chore for chore in chores if chore.get("overdue", False)]
+    upcoming_chores = [chore for chore in chores if not chore.get("overdue", False)]
     
-    for chore in chores:
-        message += f"*Data:* {chore['date']}\n"
-        message += f"*Chore name:* {chore['name']}\n"
-        message += f"*Assigned to:* {chore['assigned_to']}\n"
+    message = "📋 Chores summary:\n\n"
+    
+    # Add overdue section if there are any overdue chores
+    if overdue_chores:
+        message += f"⚠️ *OVERDUE CHORES ({len(overdue_chores)}):*\n\n"
         
-        # Add location from userfields if available
-        if chore["userfields"]:
-            try:
-                # Try to parse as JSON if it's a string
-                userfields_data = chore["userfields"]
-                if isinstance(userfields_data, str) and userfields_data.strip():
-                    try:
-                        userfields_data = json.loads(userfields_data)
-                    except:
-                        # If it's not valid JSON, just use as is
-                        pass
-                
-                # Extract location field specifically
-                if isinstance(userfields_data, dict):
-                    # Look for any field that might represent location
-                    location_keys = ["Luogo_di_lavoro", "Luogodilavoro", "location", "Location"]
-                    location = None
+        # Sort overdue chores by days overdue (most overdue first)
+        overdue_chores.sort(key=lambda x: x.get("days_overdue", 0), reverse=True)
+        
+        for chore in overdue_chores:
+            days = chore.get("days_overdue", 0)
+            overdue_text = f"❗ *OVERDUE by {days} day{'s' if days != 1 else ''}*"
+            message += f"*Date:* {chore['date']} - {overdue_text}\n"
+            message += f"*Chore name:* {chore['name']}\n"
+            message += f"*Assigned to:* {chore['assigned_to']}\n"
+            
+            # Add location from userfields if available
+            if chore["userfields"]:
+                try:
+                    # Try to parse as JSON if it's a string
+                    userfields_data = chore["userfields"]
+                    if isinstance(userfields_data, str) and userfields_data.strip():
+                        try:
+                            userfields_data = json.loads(userfields_data)
+                        except:
+                            # If it's not valid JSON, just use as is
+                            pass
                     
-                    for key in location_keys:
-                        if key in userfields_data and userfields_data[key]:
-                            location = userfields_data[key]
-                            break
+                    # Extract location field specifically
+                    if isinstance(userfields_data, dict):
+                        # Look for any field that might represent location
+                        location_keys = ["Luogo_di_lavoro", "Luogodilavoro", "location", "Location"]
+                        location = None
+                        
+                        for key in location_keys:
+                            if key in userfields_data and userfields_data[key]:
+                                location = userfields_data[key]
+                                break
+                        
+                        if location:
+                            message += f"*Luogo di lavoro:* {location}\n"
+                except Exception as e:
+                    logger.error(f"Error processing userfields: {str(e)}")
+            
+            # Add main description
+            if chore['description']:
+                message += f"*Description:* {chore['description']}\n"
+            
+            # Add references section if available and not "None"
+            references = chore["sections"].get("references", "None")
+            if references and references != "None":
+                message += f"*References:* {references}\n"
+            else:
+                message += "*References:* None\n"
+            
+            # Add equipment section if available and not "None"
+            equipment = chore["sections"].get("equipment", "None")
+            if equipment and equipment != "None":
+                message += f"*Equipment:*\n{equipment}\n"
+            else:
+                message += "*Equipment:* None\n"
+            
+            message += "\n"
+    
+    # Add upcoming chores section
+    if upcoming_chores:
+        message += f"📆 *UPCOMING CHORES ({len(upcoming_chores)}) for the next 14 days:*\n\n"
+        
+        # Sort upcoming chores by date (soonest first)
+        upcoming_chores.sort(key=lambda x: x.get("date", ""))
+        
+        for chore in upcoming_chores:
+            message += f"*Date:* {chore['date']}\n"
+            message += f"*Chore name:* {chore['name']}\n"
+            message += f"*Assigned to:* {chore['assigned_to']}\n"
+            
+            # Add location from userfields if available
+            if chore["userfields"]:
+                try:
+                    # Try to parse as JSON if it's a string
+                    userfields_data = chore["userfields"]
+                    if isinstance(userfields_data, str) and userfields_data.strip():
+                        try:
+                            userfields_data = json.loads(userfields_data)
+                        except:
+                            # If it's not valid JSON, just use as is
+                            pass
                     
-                    if location:
-                        message += f"*Luogo di lavoro:* {location}\n"
-            except Exception as e:
-                logger.error(f"Error processing userfields: {str(e)}")
-        
-        # Add main description
-        if chore['description']:
-            message += f"*Description:* {chore['description']}\n"
-        
-        # Add references section if available and not "None"
-        references = chore["sections"].get("references", "None")
-        if references and references != "None":
-            message += f"*References:* {references}\n"
-        else:
-            message += "*References:* None\n"
-        
-        # Add equipment section if available and not "None"
-        equipment = chore["sections"].get("equipment", "None")
-        if equipment and equipment != "None":
-            message += f"*Equipment:*\n{equipment}\n"
-        else:
-            message += "*Equipment:* None\n"
-        
-        message += "\n"
+                    # Extract location field specifically
+                    if isinstance(userfields_data, dict):
+                        # Look for any field that might represent location
+                        location_keys = ["Luogo_di_lavoro", "Luogodilavoro", "location", "Location"]
+                        location = None
+                        
+                        for key in location_keys:
+                            if key in userfields_data and userfields_data[key]:
+                                location = userfields_data[key]
+                                break
+                        
+                        if location:
+                            message += f"*Luogo di lavoro:* {location}\n"
+                except Exception as e:
+                    logger.error(f"Error processing userfields: {str(e)}")
+            
+            # Add main description
+            if chore['description']:
+                message += f"*Description:* {chore['description']}\n"
+            
+            # Add references section if available and not "None"
+            references = chore["sections"].get("references", "None")
+            if references and references != "None":
+                message += f"*References:* {references}\n"
+            else:
+                message += "*References:* None\n"
+            
+            # Add equipment section if available and not "None"
+            equipment = chore["sections"].get("equipment", "None")
+            if equipment and equipment != "None":
+                message += f"*Equipment:*\n{equipment}\n"
+            else:
+                message += "*Equipment:* None\n"
+            
+            message += "\n"
     
     return message
 

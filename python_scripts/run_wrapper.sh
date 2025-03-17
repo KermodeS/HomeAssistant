@@ -37,15 +37,25 @@ else
 fi
 
 echo "$TIMESTAMP: Using log file: $LOG_FILE" >> "$LOG_DIR/wrapper.log"
+echo "$TIMESTAMP: Debug - Checking if mode $MODE is valid" >> "$LOG_DIR/wrapper.log"
+echo "$TIMESTAMP: Debug - Full command: /usr/bin/python3 \"${SCRIPT_DIR}/run.py\" $@" >> "$LOG_DIR/wrapper.log"
 
 # Run the actual Python script with all arguments and redirect output to the log file
-python3 "${SCRIPT_DIR}/run.py" "$@" > "$LOG_FILE" 2>&1
+echo "===== STARTING RUN AT $TIMESTAMP =====" > "$LOG_FILE"
+python3 "${SCRIPT_DIR}/run.py" "$@" >> "$LOG_FILE" 2>&1
 EXIT_CODE=$?
 
 # Log exit code
 echo "$TIMESTAMP: Exit code: $EXIT_CODE" >> "$LOG_DIR/wrapper.log"
 
 # Append exit code to the log file as well
+echo "===== FINISHED RUN AT $(date "+%Y-%m-%d %H:%M:%S") =====" >> "$LOG_FILE"
 echo "Exit Code: $EXIT_CODE" >> "$LOG_FILE"
+
+# Rotate log files if they get too large (>100KB)
+if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE") -gt 102400 ]; then
+  mv "$LOG_FILE" "${LOG_FILE}.old"
+  echo "$TIMESTAMP: Rotated log file due to size" >> "$LOG_DIR/wrapper.log"
+fi
 
 exit $EXIT_CODE
