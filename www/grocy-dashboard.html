@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grocy Maintenance Dashboard</title>
+  <style>
+    body {
+      background-color: #0a1929;
+      color: white;
+      font-family: Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+    }
+    
+    /* (Previous styling remains unchanged) */
+    .territorio-section {
+      margin-bottom: 24px;
+      background-color: rgba(20, 40, 65, 0.7);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .territorio-section h2 {
+      color: #ffffff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 8px;
+      margin-top: 0;
+    }
+    
+    .luogo-section {
+      margin-bottom: 16px;
+    }
+    
+    .luogo-section h3 {
+      color: #78a5ff;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+    
+    .chores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    
+    .chore-card {
+      background-color: rgba(30, 60, 90, 0.7);
+      border-radius: 6px;
+      padding: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .chore-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .late {
+      background-color: rgba(120, 40, 40, 0.7);
+    }
+    
+    .chore-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .chore-name {
+      font-weight: bold;
+      font-size: 16px;
+      color: #ffffff;
+    }
+    
+    .chore-date {
+      font-size: 14px;
+      color: #aaccff;
+    }
+    
+    .late-date {
+      color: #ff9999;
+    }
+    
+    .chore-description {
+      font-size: 14px;
+      color: #dddddd;
+      margin-top: 8px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 16px;
+    }
+    
+    .error {
+      background-color: rgba(120, 40, 40, 0.7);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    
+    .refresh-info {
+      text-align: center;
+      font-size: 12px;
+      color: #aaccff;
+      margin-top: 20px;
+      font-style: italic;
+    }
+
+    .debug-info {
+      margin-top: 20px;
+      padding: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 12px;
+      color: #aaa;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+    
+    .debug-info.visible {
+      display: block !important;
+    }
+    
+    pre {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      color: #aaa;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chores-container" class="chores-container">
+    <p class="loading">Loading maintenance data...</p>
+  </div>
+  
+  <div class="refresh-info">
+    Last updated: <span id="last-update-time"></span><br>
+    Data refreshes automatically every 5 minutes
+  </div>
+  
+  <div id="debug-info" class="debug-info" style="display:none;"></div>
+
+  <script>
+    // Function to add debug info
+    function addDebugInfo(message) {
+      const debugElement = document.getElementById('debug-info');
+      debugElement.style.display = 'block';
+      
+      // Format the timestamp
+      const now = new Date();
+      const timestamp = now.toTimeString().split(' ')[0];
+      
+      // Append the message with a timestamp
+      debugElement.innerHTML += `[${timestamp}] ${message}<br>`;
+      
+      // Scroll to bottom
+      debugElement.scrollTop = debugElement.scrollHeight;
+    }
+    
+    // Function to create a hardcoded array of test data
+    function getHardcodedTestData() {
+      return [
+        {
+          "assigned_to": "Ognidove",
+          "luogo_di_lavoro": "Tempio",
+          "name": "Ispezionare e pulire i filtri dell'acqua",
+          "date": "Monday, Mar 18",
+          "description": "Open and clean the water filter containers and inspect the health of the filters."
+        },
+        {
+          "assigned_to": "Person 1",
+          "luogo_di_lavoro": "Kitchen",
+          "name": "Clean refrigerator",
+          "date": "Friday, Mar 15",
+          "description": "Remove all items, clean shelves and drawers"
+        },
+        {
+          "assigned_to": "Person 1",
+          "luogo_di_lavoro": "Bathroom",
+          "name": "Clean shower",
+          "date": "Saturday, Mar 16",
+          "description": "Use tile cleaner and scrub grout lines"
+        },
+        {
+          "assigned_to": "Person 2", 
+          "luogo_di_lavoro": "Garden",
+          "name": "Mow lawn",
+          "date": "Sunday, Mar 10",
+          "description": "Edge the garden beds after mowing"
+        }
+      ];
+    }
+    
+    // Function to fetch Home Assistant state
+    async function fetchState(entityId) {
+      try {
+        addDebugInfo(`Fetching entity: ${entityId}`);
+        
+        // Get token from localStorage if available
+        let token = null;
+        
+        if (window.localStorage.hassTokens) {
+          try {
+            const tokens = JSON.parse(window.localStorage.hassTokens);
+            if (tokens && tokens.access_token) {
+              token = tokens.access_token;
+              addDebugInfo('Authentication token found');
+            }
+          } catch (e) {
+            addDebugInfo(`Error parsing tokens: ${e.message}`);
+            return null;
+          }
+        }
+        
+        if (!token) {
+          addDebugInfo('No authentication token found, using test data');
+          return null;
+        }
+        
+        // Fetch the data
+        const response = await fetch(`/api/states/${entityId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          addDebugInfo(`HTTP error: ${response.status} - ${response.statusText}`);
+          return null;
+        }
+        
+        const data = await response.json();
+        addDebugInfo(`Data received for ${entityId}`);
+        addDebugInfo(`State: ${data.state}`);
+        
+        // Debug the attributes
+        if (data.attributes) {
+          addDebugInfo(`Attributes: ${JSON.stringify(data.attributes).substring(0, 100)}...`);
+          
+          if (data.attributes.chores) {
+            const choresType = typeof data.attributes.chores;
+            addDebugInfo(`Chores data type: ${choresType}`);
+            
+            if (choresType === 'string') {
+              addDebugInfo(`Chores string preview: ${data.attributes.chores.substring(0, 50)}...`);
+              try {
+                // Try to parse if it's a JSON string
+                const parsed = JSON.parse(data.attributes.chores);
+                addDebugInfo(`Successfully parsed chores as JSON: ${parsed.length} items`);
+              } catch (e) {
+                addDebugInfo(`Error parsing chores as JSON: ${e.message}`);
+              }
+            } else if (Array.isArray(data.attributes.chores)) {
+              addDebugInfo(`Chores array length: ${data.attributes.chores.length}`);
+            } else {
+              addDebugInfo(`Unexpected chores type: ${choresType}`);
+            }
+          } else {
+            addDebugInfo('No chores attribute found');
+          }
+        }
+        
+        return data;
+      } catch (e) {
+        addDebugInfo(`Error fetching state: ${e.message}`);
+        return null;
+      }
+    }
+    
+    // Process and display the chores data
+    async function processChores() {
+      try {
+        // Update the last updated time
+        const now = new Date();
+        document.getElementById('last-update-time').textContent = 
+          now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        addDebugInfo('Starting to process chores data');
+          
+        // Try to get real data from sensors
+        let chores = null;
+        
+        // First try organized chores sensor
+        const organizedData = await fetchState('sensor.grocy_organized_chores');
+        if (organizedData && organizedData.attributes && organizedData.attributes.chores) {
+          try {
+            // If it's a string, try to parse it as JSON
+            if (typeof organizedData.attributes.chores === 'string') {
+              chores = JSON.parse(organizedData.attributes.chores);
+            } else if (Array.isArray(organizedData.attributes.chores)) {
+              chores = organizedData.attributes.chores;
+            }
+            
+            // Verify it's a proper array with data
+            if (Array.isArray(chores) && chores.length > 0) {
+              addDebugInfo(`Using data from grocy_organized_chores: ${chores.length} items`);
+            } else {
+              chores = null;
+              addDebugInfo('grocy_organized_chores has invalid or empty data');
+            }
+          } catch (e) {
+            addDebugInfo(`Error parsing grocy_organized_chores data: ${e.message}`);
+            chores = null;
+          }
+        }
+        
+        // Next try test chores sensor
+        if (!chores) {
+          const testData = await fetchState('sensor.grocy_test_chores');
+          if (testData && testData.attributes && testData.attributes.chores) {
+            try {
+              // If it's a string, try to parse it as JSON
+              if (typeof testData.attributes.chores === 'string') {
+                chores = JSON.parse(testData.attributes.chores);
+              } else if (Array.isArray(testData.attributes.chores)) {
+                chores = testData.attributes.chores;
+              }
+              
+              // Verify it's a proper array with data
+              if (Array.isArray(chores) && chores.length > 0) {
+                addDebugInfo(`Using data from grocy_test_chores: ${chores.length} items`);
+              } else {
+                chores = null;
+                addDebugInfo('grocy_test_chores has invalid or empty data');
+              }
+            } catch (e) {
+              addDebugInfo(`Error parsing grocy_test_chores data: ${e.message}`);
+              chores = null;
+            }
+          }
+        }
+        
+        // Finally, fall back to hardcoded data
+        if (!chores) {
+          chores = getHardcodedTestData();
+          addDebugInfo(`Using hardcoded test data: ${chores.length} items`);
+        }
+        
+        // Check if we have valid data
+        if (!Array.isArray(chores) || chores.length === 0) {
+          addDebugInfo('No valid chores data found, showing empty message');
+          document.getElementById('chores-container').innerHTML = 
+            '<p class="loading">No maintenance data available</p>';
+          return;
+        }
+        
+        // Log a sample of the data
+        addDebugInfo(`Sample chore data: ${JSON.stringify(chores[0])}`);
+        
+        // Group by territorio (assigned_to) and luogo_di_lavoro
+        const groupedChores = {};
+        
+        // Use traditional for loop to avoid any possible forEach issues
+        for (let i = 0; i < chores.length; i++) {
+          const chore = chores[i];
+          
+          // Make sure territory and location exist
+          const territorio = chore.assigned_to || chore.Territorio || 'Unassigned';
+          const luogo = chore.luogo_di_lavoro || chore.Luogo_di_lavoro || 'No Location';
+          
+          // Initialize if needed
+          if (!groupedChores[territorio]) {
+            groupedChores[territorio] = {};
+          }
+          
+          if (!groupedChores[territorio][luogo]) {
+            groupedChores[territorio][luogo] = [];
+          }
+          
+          // Add to the appropriate group
+          groupedChores[territorio][luogo].push(chore);
+        }
+        
+        addDebugInfo('Grouped chores by territorio and luogo');
+        
+        // Generate HTML output
+        let html = '';
+        
+        // Loop through territories
+        const territorios = Object.keys(groupedChores);
+        for (let t = 0; t < territorios.length; t++) {
+          const territorio = territorios[t];
+          
+          html += `<div class="territorio-section">
+            <h2>${territorio}</h2>`;
+          
+          // Loop through locations in this territory
+          const lugares = Object.keys(groupedChores[territorio]);
+          for (let l = 0; l < lugares.length; l++) {
+            const luogo = lugares[l];
+            
+            html += `<div class="luogo-section">
+              <h3>${luogo}</h3>
+              <div class="chores-grid">`;
+            
+            // Loop through chores in this location
+            const locationChores = groupedChores[territorio][luogo];
+            for (let c = 0; c < locationChores.length; c++) {
+              const chore = locationChores[c];
+              
+              // Try to parse the date, with fallback handling
+              let choreDate;
+              try {
+                // Remove day of week prefix if present
+                const dateString = chore.date
+                  .replace(/Monday,\s+/i, '')
+                  .replace(/Tuesday,\s+/i, '')
+                  .replace(/Wednesday,\s+/i, '')
+                  .replace(/Thursday,\s+/i, '')
+                  .replace(/Friday,\s+/i, '')
+                  .replace(/Saturday,\s+/i, '')
+                  .replace(/Sunday,\s+/i, '');
+                
+                choreDate = new Date(dateString);
+                
+                // Check if date is valid
+                if (isNaN(choreDate.getTime())) {
+                  // If invalid, use a default date (today)
+                  choreDate = new Date();
+                }
+              } catch (e) {
+                // Use today as fallback
+                choreDate = new Date();
+                addDebugInfo(`Error parsing date "${chore.date}": ${e.message}`);
+              }
+              
+              const today = new Date();
+              const isLate = choreDate < today;
+              
+              // Build the chore card
+              html += `<div class="chore-card ${isLate ? 'late' : ''}">
+                <div class="chore-header">
+                  <span class="chore-name">${chore.name}</span>
+                  <span class="chore-date ${isLate ? 'late-date' : ''}">${chore.date}</span>
+                </div>
+                <div class="chore-description">${chore.description || 'No description'}</div>
+              </div>`;
+            }
+            
+            html += `</div></div>`;
+          }
+          
+          html += `</div>`;
+        }
+        
+        // Update the container with the generated HTML
+        if (html) {
+          document.getElementById('chores-container').innerHTML = html;
+          addDebugInfo('Updated chores container with generated HTML');
+        } else {
+          document.getElementById('chores-container').innerHTML = 
+            '<p class="loading">No maintenance tasks found</p>';
+          addDebugInfo('No HTML generated, showing empty message');
+        }
+          
+      } catch (e) {
+        addDebugInfo(`Error processing maintenance data: ${e.message}`);
+        if (e.stack) {
+          addDebugInfo(`Stack trace: ${e.stack.split('\n')[0]}`);
+        }
+        
+        document.getElementById('chores-container').innerHTML = 
+          `<div class="error">
+            <p>Error processing maintenance data: ${e.message}</p>
+            <p>Check debug info below for details.</p>
+          </div>`;
+      }
+    }
+    
+    // Add a URL parameter toggle for debugging
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+      document.getElementById('debug-info').classList.add('visible');
+    }
+    
+    // Start processing after a short delay to ensure the page is fully loaded
+    setTimeout(processChores, 500);
+    
+    // Refresh data every 5 minutes
+    setInterval(processChores, 300000);
+  </script>
+</body>
+</html>

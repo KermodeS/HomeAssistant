@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Ispezionare e pulire i filtri dell'acqua",
+    "date": "Tuesday, Mar 11",
+    "dueStatus": "upcoming",
+    "assigned_to": "Kermode Sequoia",
+    "description": "Open and clean the water filter containers and inspect the health of the filters.",
+    "territorio": "Ognidove",
+    "luogo_di_lavoro": "Locale Tecnico",
+    "references": "None",
+    "equipment": "Filtri per l'acqua - Ispezione\nFiltri per l'acqua - Pulizie\n---"
+  },
+  {
+    "name": "Other chore test",
+    "date": "Thursday, Mar 20",
+    "dueStatus": "upcoming",
+    "assigned_to": "Kermode Sequoia",
+    "description": "task description",
+    "territorio": "Bucce",
+    "luogo_di_lavoro": "Cucina",
+    "references": "None",
+    "equipment": "This piece\n---"
+  }
+]

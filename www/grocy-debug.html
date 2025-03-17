@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grocy Debug Dashboard</title>
+  <style>
+    body {
+      background-color: #0a1929;
+      color: white;
+      font-family: Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+    }
+    pre {
+      background-color: rgba(30, 60, 90, 0.7);
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .debug-section {
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #78a5ff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Grocy Dashboard Debug</h1>
+  
+  <div class="debug-section">
+    <h2>Sensor Data</h2>
+    <pre id="sensor-data">Loading sensor data...</pre>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Parsed Chores</h2>
+    <pre id="parsed-chores">Loading chore data...</pre>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Authentication Status</h2>
+    <pre id="auth-status">Checking authentication...</pre>
+  </div>
+  
+  <script>
+    // Function to update a section
+    function updateSection(id, content, isJson = true) {
+      const element = document.getElementById(id);
+      if (element) {
+        if (isJson) {
+          try {
+            element.textContent = JSON.stringify(content, null, 2);
+          } catch (e) {
+            element.textContent = `Error stringifying data: ${e.message}\n\nOriginal data: ${content}`;
+          }
+        } else {
+          element.textContent = content;
+        }
+      }
+    }
+    
+    // Check authentication
+    async function checkAuth() {
+      try {
+        // Check for auth in localStorage
+        let authInfo = "No authentication found in localStorage";
+        let tokenFound = false;
+        
+        if (window.localStorage.hassTokens) {
+          try {
+            const tokens = JSON.parse(window.localStorage.hassTokens);
+            if (tokens && tokens.access_token) {
+              tokenFound = true;
+              authInfo = "Authentication found in localStorage (token hidden for security)";
+            }
+          } catch (e) {
+            authInfo = `Error parsing tokens from localStorage: ${e.message}`;
+          }
+        }
+        
+        updateSection('auth-status', authInfo, false);
+        return tokenFound;
+      } catch (e) {
+        updateSection('auth-status', `Error checking authentication: ${e.message}`, false);
+        return false;
+      }
+    }
+    
+    // Fetch sensor data
+    async function fetchSensorData() {
+      try {
+        // Get token if available
+        let token = null;
+        if (window.localStorage.hassTokens) {
+          try {
+            const tokens = JSON.parse(window.localStorage.hassTokens);
+            if (tokens && tokens.access_token) {
+              token = tokens.access_token;
+            }
+          } catch (e) {
+            updateSection('sensor-data', `Error parsing tokens: ${e.message}`, false);
+            return null;
+          }
+        }
+        
+        if (!token) {
+          updateSection('sensor-data', "No authentication token found, cannot fetch data", false);
+          return null;
+        }
+        
+        // Fetch the data
+        const response = await fetch('/api/states/sensor.grocy_organized_chores', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          updateSection('sensor-data', `HTTP error: ${response.status} - ${response.statusText}`, false);
+          return null;
+        }
+        
+        const data = await response.json();
+        updateSection('sensor-data', data);
+        return data;
+      } catch (e) {
+        updateSection('sensor-data', `Error fetching sensor data: ${e.message}`, false);
+        return null;
+      }
+    }
+    
+    // Process chores data
+    async function processChores() {
+      try {
+        const sensorData = await fetchSensorData();
+        
+        if (!sensorData || !sensorData.attributes || !sensorData.attributes.chores) {
+          updateSection('parsed-chores', "No chore data found in sensor", false);
+          return;
+        }
+        
+        const chores = sensorData.attributes.chores;
+        updateSection('parsed-chores', chores);
+      } catch (e) {
+        updateSection('parsed-chores', `Error processing chores: ${e.message}`, false);
+      }
+    }
+    
+    // Run the checks
+    async function runChecks() {
+      await checkAuth();
+      await processChores();
+    }
+    
+    // Start processing
+    runChecks();
+  </script>
+</body>
+</html>

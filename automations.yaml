@@ -60,6 +60,24 @@
       value_template: "{{ is_state('sensor.grocy_run_status', 'failed') }}"
     - service: shell_command.run_grocy_module
 
+########  Grocy Dashboard Update  ########
+########  Grocy Dashboard Update  ########
+- id: update_grocy_dashboard
+  alias: Update Grocy Dashboard Data
+  description: "Update the data for the Grocy dashboard"
+  trigger:
+    # Update every hour
+    - platform: time_pattern
+      hours: "/1"
+    # Also update whenever chores notifications are run
+    - platform: event
+      event_type: call_service
+      event_data:
+        domain: shell_command
+        service: run_grocy_module
+  action:
+    - service: shell_command.update_grocy_dashboard
+
 ########  Debug Mode Toggle  ########
 - id: debug_mode_notification
   alias: Debug Mode Toggle
@@ -80,12 +98,12 @@
   description: "Check Shelly UNI voltage levels and notify if outside thresholds"
   trigger:
     - platform: time_pattern
-      seconds: "/5"  # Check every 5 seconds (increased slightly from 3 to reduce system load)
+      seconds: "/5" # Check every 5 seconds (increased slightly from 3 to reduce system load)
     - platform: state
       entity_id: sensor.shellyplusuni_cc7b5c887520_voltmeter
-      for: "00:00:03"  # 3 second debounce
+      for: "00:00:03" # 3 second debounce
   action:
-    - service: shell_command.check_alarm_voltage  # Use the regular command now that we know it works
+    - service: shell_command.check_alarm_voltage # Use the regular command now that we know it works
   mode: single
 
 ########  Log Management  ########

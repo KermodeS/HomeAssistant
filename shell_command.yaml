@@ -193,3 +193,17 @@ test_alarm_reset: >
   python3 /config/python_scripts/debug/test_alarm_reset.py
   {{ states('sensor.grocy_script_token') }}
   input_boolean.voltage_alarm_active
+
+update_grocy_dashboard: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode grocy_dashboard
+  --hass-token '{{ states("sensor.grocy_script_token") }}'
+  --grocy-url '{{ states("input_text.grocy_url") }}' 
+  --grocy-api-key '{{ states("input_text.grocy_api_key") }}'
+
+test_grocy_dashboard: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode grocy_dashboard
+  --hass-token "test_token"
+  --grocy-url "http://example.com" 
+  --grocy-api-key "test_key"

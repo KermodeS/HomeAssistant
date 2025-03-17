@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocy UI Test Environment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .test-area {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 300px;
+            position: relative;
+        }
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .component-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .component-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            width: calc(33% - 10px);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .component-card:hover {
+            background-color: #f0f0f0;
+        }
+        #console-output {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            font-family: monospace;
+            height: 100px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grocy UI Test Environment</h1>
+        <p>This environment allows you to test Grocy UI components in isolation before integrating them with Home Assistant.</p>
+        
+        <div class="tab-container">
+            <div class="tab active" data-tab="components">UI Components</div>
+            <div class="tab" data-tab="css">CSS Styling</div>
+            <div class="tab" data-tab="js">JavaScript</div>
+            <div class="tab" data-tab="api">API Testing</div>
+        </div>
+        
+        <div class="tab-content active" id="components-tab">
+            <h2>UI Components</h2>
+            <div class="component-list">
+                <div class="component-card" data-component="barcode-scanner">
+                    <h3>Barcode Scanner</h3>
+                    <p>Test the barcode scanner interface</p>
+                </div>
+                <div class="component-card" data-component="inventory-list">
+                    <h3>Inventory List</h3>
+                    <p>Display and interact with inventory items</p>
+                </div>
+                <div class="component-card" data-component="product-card">
+                    <h3>Product Card</h3>
+                    <p>Individual product display card</p>
+                </div>
+            </div>
+            <div class="test-area" id="component-test-area">
+                <p>Select a component from above to test it here</p>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="css-tab">
+            <h2>CSS Testing</h2>
+            <div class="control-panel">
+                <h3>CSS Editor</h3>
+                <textarea id="css-editor">.grocy-custom {
+    /* Add your custom CSS here */
+    color: #333;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}</textarea>
+                <button id="apply-css">Apply CSS</button>
+                <button id="reset-css">Reset</button>
+            </div>
+            <div class="test-area" id="css-test-area">
+                <div class="grocy-custom">
+                    <h3>Product: Milk</h3>
+                    <p>Quantity: 2</p>
+                    <p>Expiry: 2023-07-15</p>
+                    <button>Consume</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="js-tab">
+            <h2>JavaScript Testing</h2>
+            <div class="control-panel">
+                <h3>JavaScript Editor</h3>
+                <textarea id="js-editor">// Example JavaScript from GrocyCustom
+function testGrocyFunction() {
+    console.log("Testing Grocy function...");
+    
+    // Simulate API call
+    setTimeout(() => {
+        console.log("API response received");
+        document.getElementById("js-test-area").innerHTML += 
+            '<div class="result-item">API call successful</div>';
+    }, 1000);
+}</textarea>
+                <button id="run-js">Run Script</button>
+                <button id="clear-console">Clear Console</button>
+            </div>
+            <div class="test-area" id="js-test-area">
+                <p>JavaScript output will appear here</p>
+            </div>
+            <div id="console-output">
+                > Console output will appear here
+            </div>
+        </div>
+        
+        <div class="tab-content" id="api-tab">
+            <h2>API Testing</h2>
+            <div class="control-panel">
+                <h3>API Request Configuration</h3>
+                <div>
+                    <label for="api-url">Grocy API URL:</label>
+                    <input type="text" id="api-url" style="width: 100%" value="http://yourgrocyserver/api/objects/products">
+                </div>
+                <div style="margin-top: 10px">
+                    <label for="api-key">API Key:</label>
+                    <input type="password" id="api-key" style="width: 100%">
+                </div>
+                <div style="margin-top: 15px">
+                    <button id="test-api">Test API Connection</button>
+                    <button id="fetch-products">Fetch Products</button>
+                    <button id="fetch-chores">Fetch Chores</button>
+                </div>
+            </div>
+            <div class="test-area" id="api-test-area">
+                <p>API response will appear here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                const tabId = `${tab.dataset.tab}-tab`;
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // UI Component handling
+        const componentCards = document.querySelectorAll('.component-card');
+        componentCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const componentType = card.dataset.component;
+                const testArea = document.getElementById('component-test-area');
+                
+                // Load different test UI based on component type
+                switch(componentType) {
+                    case 'barcode-scanner':
+                        testArea.innerHTML = `
+                            <h3>Barcode Scanner Test</h3>
+                            <div style="margin: 20px 0;">
+                                <input type="text" placeholder="Enter barcode..." style="padding: 10px; width: 70%;">
+                                <button style="padding: 10px;">Scan</button>
+                            </div>
+                            <div style="border: 1px solid #ddd; padding: 15px;">
+                                <p><strong>Last scanned:</strong> <span id="last-scanned">None</span></p>
+                                <p><strong>Product found:</strong> <span id="product-found">N/A</span></p>
+                            </div>
+                        `;
+                        break;
+                    case 'inventory-list':
+                        testArea.innerHTML = `
+                            <h3>Inventory List Test</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background-color: #f1f1f1;">
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Product</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Quantity</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Expiry</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Milk</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">2</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">2023-07-15</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">
+                                            <button style="margin-right: 5px;">Consume</button>
+                                            <button>Edit</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Bread</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">1</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">2023-07-10</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">
+                                            <button style="margin-right: 5px;">Consume</button>
+                                            <button>Edit</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        `;
+                        break;
+                    case 'product-card':
+                        testArea.innerHTML = `
+                            <h3>Product Card Test</h3>
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                <div style="border: 1px solid #ddd; border-radius: 5px; padding: 15px; width: 200px;">
+                                    <h4 style="margin-top: 0;">Milk</h4>
+                                    <p><strong>Quantity:</strong> 2</p>
+                                    <p><strong>Location:</strong> Refrigerator</p>
+                                    <p><strong>Expiry:</strong> 2023-07-15</p>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                                        <button>-</button>
+                                        <span>2</span>
+                                        <button>+</button>
+                                    </div>
+                                </div>
+                                <div style="border: 1px solid #ddd; border-radius: 5px; padding: 15px; width: 200px;">
+                                    <h4 style="margin-top: 0;">Bread</h4>
+                                    <p><strong>Quantity:</strong> 1</p>
+                                    <p><strong>Location:</strong> Pantry</p>
+                                    <p><strong>Expiry:</strong> 2023-07-10</p>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                                        <button>-</button>
+                                        <span>1</span>
+                                        <button>+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        break;
+                }
+            });
+        });
+        
+        // CSS Testing
+        document.getElementById('apply-css').addEventListener('click', () => {
+            const css = document.getElementById('css-editor').value;
+            
+            // Create or update the style element
+            let styleElement = document.getElementById('custom-style');
+            if (!styleElement) {
+                styleElement = document.createElement('style');
+                styleElement.id = 'custom-style';
+                document.head.appendChild(styleElement);
+            }
+            
+            styleElement.textContent = css;
+        });
+        
+        document.getElementById('reset-css').addEventListener('click', () => {
+            document.getElementById('css-editor').value = `.grocy-custom {
+    /* Add your custom CSS here */
+    color: #333;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}`;
+            
+            const styleElement = document.getElementById('custom-style');
+            if (styleElement) {
+                styleElement.textContent = '';
+            }
+        });
+        
+        // JavaScript Testing
+        document.getElementById('run-js').addEventListener('click', () => {
+            const jsCode = document.getElementById('js-editor').value;
+            const testArea = document.getElementById('js-test-area');
+            testArea.innerHTML = '<p>Running script...</p>';
+            
+            // Save original console methods
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            // Override console methods to display in our console output
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                document.getElementById('console-output').innerHTML += 
+                    `<div>> ${args.join(' ')}</div>`;
+            };
+            
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                document.getElementById('console-output').innerHTML += 
+                    `<div style="color: #ff5252;">> ERROR: ${args.join(' ')}</div>`;
+            };
+            
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                document.getElementById('console-output').innerHTML += 
+                    `<div style="color: #ffd600;">> WARNING: ${args.join(' ')}</div>`;
+            };
+            
+            try {
+                // Execute the code
+                eval(jsCode);
+            } catch (error) {
+                console.error(error.message);
+                testArea.innerHTML += `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+            
+            // Restore original console methods
+            console.log = originalLog;
+            console.error = originalError;
+            console.warn = originalWarn;
+        });
+        
+        document.getElementById('clear-console').addEventListener('click', () => {
+            document.getElementById('console-output').innerHTML = '> Console cleared';
+        });
+        
+        // API Testing
+        document.getElementById('test-api').addEventListener('click', () => {
+            const apiUrl = document.getElementById('api-url').value;
+            const apiKey = document.getElementById('api-key').value;
+            const testArea = document.getElementById('api-test-area');
+            
+            testArea.innerHTML = '<p>Testing API connection...</p>';
+            
+            // Just show what would happen (we don't make actual API calls in this test environment)
+            testArea.innerHTML = `
+                <h3>API Test Results</h3>
+                <p><strong>URL:</strong> ${apiUrl}</p>
+                <p><strong>Headers:</strong> GROCY-API-KEY: ${apiKey ? '****' : 'Not provided'}</p>
+                <p><strong>Status:</strong> <span style="color: green;">This is a simulation - no actual API call made</span></p>
+                <pre style="background-color: #f5f5f5; padding: 10px; overflow: auto;">
+// This would be the actual API response
+{
+    "success": true,
+    "message": "API connection successful"
+}
+                </pre>
+            `;
+        });
+        
+        document.getElementById('fetch-products').addEventListener('click', () => {
+            const testArea = document.getElementById('api-test-area');
+            testArea.innerHTML = '<p>Fetching products (simulated)...</p>';
+            
+            // Simulate API response
+            setTimeout(() => {
+                testArea.innerHTML = `
+                    <h3>Products API Response (Simulated)</h3>
+                    <pre style="background-color: #f5f5f5; padding: 10px; overflow: auto;">
+[
+    {
+        "id": 1,
+        "name": "Milk",
+        "description": "Whole milk",
+        "location_id": 1,
+        "min_stock_amount": 1,
+        "best_before_days": 7
+    },
+    {
+        "id": 2,
+        "name": "Bread",
+        "description": "Whole wheat bread",
+        "location_id": 2,
+        "min_stock_amount": 1,
+        "best_before_days": 5
+    }
+]
+                    </pre>
+                `;
+            }, 1000);
+        });
+        
+        document.getElementById('fetch-chores').addEventListener('click', () => {
+            const testArea = document.getElementById('api-test-area');
+            testArea.innerHTML = '<p>Fetching chores (simulated)...</p>';
+            
+            // Simulate API response
+            setTimeout(() => {
+                testArea.innerHTML = `
+                    <h3>Chores API Response (Simulated)</h3>
+                    <pre style="background-color: #f5f5f5; padding: 10px; overflow: auto;">
+[
+    {
+        "id": 1,
+        "name": "Clean refrigerator",
+        "description": "Clean and organize refrigerator",
+        "period_type": "weekly",
+        "period_days": 7
+    },
+    {
+        "id": 2,
+        "name": "Take out trash",
+        "description": "Empty all trash bins",
+        "period_type": "daily",
+        "period_days": 1
+    }
+]
+                    </pre>
+                `;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
