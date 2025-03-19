@@ -55,3 +55,9 @@ check_all_logs:
       data:
         message: "Weather Log:"
     - service: shell_command.check_weather_log
+
+# Script to manually run storage management
+run_storage_management:
+  alias: "Run Storage Management"
+  sequence:
+    - service: shell_command.run_storage_management

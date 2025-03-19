@@ -1,0 +1,1 @@
+⚠️ Error checking chores: HTTPSConnectionPool(host='your-grocy-instance.com', port=443): Max retries exceeded with url: /api/chores (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa5a58440>: Failed to establish a new connection: [Errno -2] Name does not resolve'))

@@ -1,0 +1,11 @@
+# weather.yaml
+
+- platform: met
+  name: HomeWeather
+  latitude: !secret home_latitude
+  longitude: !secret home_longitude
+  elevation: !secret home_elevation
+  
+  openweathermap_api_key:
+  
+  # https://home.openweathermap.org/api_keys

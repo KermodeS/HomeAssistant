@@ -207,3 +207,18 @@ test_grocy_dashboard: >
   --hass-token "test_token"
   --grocy-url "http://example.com" 
   --grocy-api-key "test_key"
+
+
+run_storage_management: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode storage
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --max-log-size 2048
+  --max-log-age 30
+
+rotate_log_files: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode storage
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --max-log-size 1024
+  --max-log-age 14

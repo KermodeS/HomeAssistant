@@ -1,0 +1,57 @@
+# Updated scripts.yaml for modular architecture
+
+# Script to run Grocy chores check
+# In scripts.yaml
+check_grocy_chores:
+  alias: "Check Grocy Chores"
+  sequence:
+    - service: shell_command.run_grocy_module
+      data:
+        token: !secret grocy_script_token
+
+# Script to get weather information
+check_weather:
+  alias: "Check Weather"
+  sequence:
+    - service: shell_command.run_weather_module
+
+# Scripts for debugging
+debug_grocy:
+  alias: "Debug Grocy Connection"
+  sequence:
+    - service: shell_command.debug_grocy_connection
+    - delay:
+        seconds: 2
+    - service: shell_command.check_grocy_log
+    - service: telegram_bot.send_message
+      data:
+        message: "Grocy debug completed. Check the logs for details."
+
+test_telegram_service:
+  alias: "Test Telegram Service"
+  sequence:
+    - service: shell_command.test_telegram
+    - delay:
+        seconds: 2
+    - service: shell_command.check_main_log
+
+# Script to check all logs
+check_all_logs:
+  alias: "Check All Logs"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        message: "Main Log:"
+    - service: shell_command.check_main_log
+    - delay:
+        seconds: 1
+    - service: telegram_bot.send_message
+      data:
+        message: "Grocy Log:"
+    - service: shell_command.check_grocy_log
+    - delay:
+        seconds: 1
+    - service: telegram_bot.send_message
+      data:
+        message: "Weather Log:"
+    - service: shell_command.check_weather_log

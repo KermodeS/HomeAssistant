@@ -1,0 +1,62 @@
+########  Weather Daily Update  ########
+- alias: Daily Weather Forecast
+  trigger:
+    - platform: time
+      at: "13:08:00"
+  action:
+    - service: shell_command.run_weather_module
+
+########  Caldaia Shelly Relay Status Updates  ########
+- id: "1738425166100"
+  alias: Caldaia Shelly Relay - Now ON
+  description: ""
+  triggers:
+    - type: turned_on
+      device_id: !secret shelly_caldaia_switch_device_id
+      entity_id: !secret shelly_caldaia_switch_entity_id
+      domain: switch
+      trigger: device
+  conditions: []
+  actions:
+    - service: shell_command.notify_caldaia_on
+  mode: single
+
+- id: "1738425278440"
+  alias: Caldaia Shelly Relay - Now OFF
+  description: ""
+  triggers:
+    - type: turned_off
+      device_id: !secret shelly_caldaia_switch_device_id
+      entity_id: !secret shelly_caldaia_switch_entity_id
+      domain: switch
+      trigger: device
+  conditions: []
+  actions:
+    - service: shell_command.notify_caldaia_off
+  mode: single
+
+########  Grocy  ########
+- id: grocy_chores_notification
+  alias: Grocy Chores Notification
+  description: "Send notifications about upcoming chores in Grocy"
+  trigger:
+    - platform: time
+      at: "13:08:00"
+    - platform: state
+      entity_id: input_boolean.debug_mode
+      to: "on"
+  action:
+    - service: shell_command.run_grocy_module
+
+########  Debug Mode Toggle  ########
+- id: debug_mode_notification
+  alias: Debug Mode Toggle
+  description: "Notify when debug mode is toggled"
+  trigger:
+    - platform: state
+      entity_id: input_boolean.debug_mode
+  action:
+    - service: telegram_bot.send_message
+      data:
+        message: >-
+          Debug mode is now {{ states('input_boolean.debug_mode') }}

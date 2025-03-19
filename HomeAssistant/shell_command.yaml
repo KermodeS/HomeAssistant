@@ -1,0 +1,123 @@
+# Updated shell_command.yaml for use with the updated run_wrapper.sh
+
+# Main commands for regular operation - using the wrapper script
+run_grocy_module: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode grocy
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --grocy-url "{{ states('input_text.grocy_url') }}" 
+  --grocy-api-key "{{ states('input_text.grocy_api_key') }}"
+
+run_weather_module: >
+  /bin/bash /config/python_scripts/run_wrapper.sh 
+  --mode weather
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --weather-entity "weather.openweathermap"
+
+# Device monitoring commands
+notify_caldaia_on: >
+  /bin/bash /config/python_scripts/run_wrapper.sh
+  --mode device
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --device-entity "{{ states('input_text.shelly_caldaia_entity') }}"
+  --device-state "on"
+
+notify_caldaia_off: >
+  /bin/bash /config/python_scripts/run_wrapper.sh
+  --mode device
+  --hass-token "{{ states('sensor.grocy_script_token') }}"
+  --device-entity "{{ states('input_text.shelly_caldaia_entity') }}"
+  --device-state "off"
+
+# Debug commands remain the same
+debug_grocy_connection: >
+  python3 /config/python_scripts/debug/grocy_debug.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+  "connection"
+  > /config/www/logs/grocy_debug.log 2>&1
+
+debug_grocy_endpoints: >
+  python3 /config/python_scripts/debug/grocy_debug.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+  "endpoints"
+  > /config/www/logs/grocy_endpoints.log 2>&1
+
+debug_grocy_chores: >
+  python3 /config/python_scripts/debug/grocy_debug.py 
+  "{{ states('input_text.grocy_url') }}" 
+  "{{ states('input_text.grocy_api_key') }}"
+  "chores"
+  > /config/www/logs/grocy_chores.log 2>&1
+
+test_telegram: >
+  python3 /config/python_scripts/debug/telegram_debug.py 
+  "{{ states('sensor.grocy_script_token') }}"
+  "Test message from Home Assistant"
+  "simple"
+  > /config/www/logs/telegram_test.log 2>&1
+
+test_telegram_formatting: >
+  python3 /config/python_scripts/debug/telegram_debug.py 
+  "{{ states('sensor.grocy_script_token') }}"
+  ""
+  "format"
+  > /config/www/logs/telegram_format.log 2>&1
+
+# Utility commands
+check_grocy_log: >
+  bash -c 'cat /config/www/logs/grocy.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+check_weather_log: >
+  bash -c 'cat /config/www/logs/weather.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+check_main_log: >
+  bash -c 'cat /config/www/logs/main.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+check_wrapper_log: >
+  bash -c 'cat /config/www/logs/wrapper.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+check_grocy_run_log: >
+  bash -c 'cat /config/www/logs/grocy_run.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+check_weather_run_log: >
+  bash -c 'cat /config/www/logs/weather_run.log 2>/dev/null | tail -n 50 || echo "No log file found"'
+
+# Manual test commands
+test_grocy_direct: >
+  cd /config/python_scripts && python3 run.py --mode grocy --hass-token "{{ states('sensor.grocy_script_token') }}" --grocy-url "{{ states('input_text.grocy_url') }}" --grocy-api-key "{{ states('input_text.grocy_api_key') }}"
+
+test_weather_direct: >
+  cd /config/python_scripts && python3 run.py --mode weather --hass-token "{{ states('sensor.grocy_script_token') }}" --weather-entity "weather.openweathermap"
+
+  # Weather debug commands
+debug_weather_entities: >
+  python3 /config/python_scripts/debug/weather_debug.py 
+  "{{ states('sensor.grocy_script_token') }}"
+  "weather.openweathermap"
+  "list"
+  > /config/www/logs/weather_entities.log 2>&1
+
+debug_weather_service: >
+  python3 /config/python_scripts/debug/weather_debug.py 
+  "{{ states('sensor.grocy_script_token') }}"
+  "weather.openweathermap"
+  "service"
+  > /config/www/logs/weather_service.log 2>&1
+
+debug_weather_entity: >
+  python3 /config/python_scripts/debug/weather_debug.py 
+  "{{ states('sensor.grocy_script_token') }}"
+  "weather.openweathermap"
+  "entity"
+  > /config/www/logs/weather_entity.log 2>&1
+
+check_weather_entities_log: >
+  bash -c 'cat /config/www/logs/weather_entities.log 2>/dev/null || echo "No log file found"'
+
+check_weather_service_log: >
+  bash -c 'cat /config/www/logs/weather_service.log 2>/dev/null || echo "No log file found"'
+
+check_weather_entity_log: >
+  bash -c 'cat /config/www/logs/weather_entity.log 2>/dev/null || echo "No log file found"'

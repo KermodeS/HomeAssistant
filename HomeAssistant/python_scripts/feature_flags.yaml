@@ -1,0 +1,22 @@
+# Feature Flags for Home Assistant Automations
+# Set to true to enable or false to disable features
+
+weather:
+  enabled: true # Master switch for all weather features
+  daily_forecast: true # Daily temperature forecast
+  extreme_weather_alert: true # Notifications for rain, wind, snow
+
+devices:
+  enabled: true # Master switch for all device monitoring
+  shelly_caldaia_notifications: true # Shelly relay status notifications
+
+grocy:
+  enabled: true # Master switch for Grocy integration
+  chores_notification: true # Daily chores notifications
+
+notifications:
+  telegram_enabled: true # Enable/disable all Telegram notifications
+  log_to_file: true # Log notifications to file for debugging
+
+debug:
+  verbose_logging: true # Enable detailed logging

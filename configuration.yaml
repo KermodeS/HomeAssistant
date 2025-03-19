@@ -177,11 +177,30 @@ template:
               not_recent
             {% endif %}
 
-  - sensor:
-      - name: "Shelly Last Changed"
-        unique_id: shelly_last_changed
+      # Storage sensors
+      - name: "Storage Data"
+        unique_id: storage_data
         state: >-
-          {{ states('input_number.shelly_last_changed') | int }}
+          {% set data = states('sensor.storage_data_raw') | default('{}') %}
+          {{ data }}
+
+      - name: "Storage Total Space"
+        unique_id: storage_total_space
+        icon: mdi:harddisk
+        state: >-
+          {% set data = states('sensor.storage_data_raw') %}
+          {% if data and data != 'unknown' and data != '{}' %}
+            {% set json_data = data | from_json %}
+            {% if json_data.disk and json_data.disk.total_human %}
+              {{ json_data.disk.total_human }}
+            {% else %}
+              Unknown
+            {% endif %}
+          {% else %}
+            Unknown
+          {% endif %}
+
+      # Add other storage sensors here following the same pattern
 
 command_line:
   - sensor:
@@ -189,3 +208,8 @@ command_line:
       unique_id: grocy_log_content
       command: "cat /config/www/logs/grocy.log 2>/dev/null | tail -n 10 | grep -m 1 'Sent notification' || echo 'No notifications found'"
       scan_interval: 300
+  - sensor:
+      name: "Storage Data Raw"
+      unique_id: storage_data_raw
+      command: "cat /config/www/data/storage_data.json 2>/dev/null || echo '{}'"
+      scan_interval: 3600

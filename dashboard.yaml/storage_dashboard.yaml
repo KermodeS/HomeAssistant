@@ -1,0 +1,72 @@
+type: vertical-stack
+title: Storage Management
+cards:
+  - type: entities
+    title: Disk Space
+    icon: mdi:harddisk
+    entities:
+      - type: custom:template-entity-row
+        name: Total Space
+        icon: mdi:database
+        state: "{{ states('sensor.storage_total_space') }}"
+      - type: custom:template-entity-row
+        name: Used Space
+        icon: mdi:database-marker
+        state: "{{ states('sensor.storage_used_space') }}"
+      - type: custom:template-entity-row
+        name: Free Space
+        icon: mdi:database-outline
+        state: "{{ states('sensor.storage_free_space') }}"
+      - type: custom:bar-card
+        name: Disk Usage
+        entity: sensor.storage_used_percent
+        severity:
+          - color: "#303030"
+            value: 0
+          - color: "#3498db"
+            value: 60
+          - color: "#f39c12"
+            value: 80
+          - color: "#e74c3c"
+            value: 90
+
+  - type: entities
+    title: Log Files
+    icon: mdi:file-document-multiple
+    entities:
+      - type: custom:template-entity-row
+        name: Total Log Size
+        icon: mdi:file-chart
+        state: "{{ states('sensor.storage_log_size') }}"
+      - type: custom:template-entity-row
+        name: Log Files Count
+        icon: mdi:file
+        state: "{{ states('sensor.storage_log_count') }}"
+      - type: custom:template-entity-row
+        name: Last Rotation
+        icon: mdi:rotate-right
+        state: >-
+          {% if states('sensor.storage_last_rotation') == 'unknown' or states('sensor.storage_last_rotation') == '' %}
+          Never
+          {% else %}
+          {{ states('sensor.storage_last_rotation') }}
+          {% endif %}
+
+  - type: custom:auto-entities
+    card:
+      type: entities
+      title: Largest Log Files
+      icon: mdi:file-alert
+    filter:
+      include:
+        - entity_id: "sensor.log_file_*_size"
+          options:
+            secondary_info: state
+      exclude:
+        - state: "unknown"
+        - state: "unavailable"
+    sort:
+      method: state
+      numeric: true
+      reverse: true
+    limit: 5

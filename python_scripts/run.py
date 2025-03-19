@@ -42,6 +42,7 @@ try:
     logger = get_logger("run")
     
     # Then import the service modules
+    from services.storage import manage_storage
     from services.grocy import notify_chores
     from services.weather import process_weather_data
     from services.devices import monitor_device_change, notify_shelly_caldaia_status
@@ -59,7 +60,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run Home Assistant automations")
     
     # Add the mode argument
-    parser.add_argument("--mode", choices=["grocy", "weather", "device", "alarm_voltage", "grocy_dashboard", "all"],
+    parser.add_argument("--mode", choices=["grocy", "weather", "device", "alarm_voltage", "grocy_dashboard", "storage", "all"],
                         help="Automation mode to run", required=True)
     
     # Common arguments
@@ -77,11 +78,14 @@ def parse_arguments():
     parser.add_argument("--device-entity", help="Device entity ID")
     parser.add_argument("--device-state", help="Device state (on/off)")
 
-    # Add after the device-specific arguments
     # Voltage-specific arguments
     parser.add_argument("--voltage-entity", help="Voltage sensor entity ID")
     parser.add_argument("--previous-state-entity", help="Entity ID that tracks previous alarm state")
     parser.add_argument("--voltage-state-entity", help="Entity ID that tracks voltage alarm state")
+
+    # Storage-specific arguments
+    parser.add_argument("--max-log-size", type=int, help="Maximum log file size in KB", default=1024)
+    parser.add_argument("--max-log-age", type=int, help="Maximum log file age in days", default=30) 
 
     return parser.parse_args()
 
@@ -200,6 +204,16 @@ def run_alarm_voltage(args):
     
     return check_voltage_alarm(args.hass_url, args.hass_token, args.voltage_entity, state_entity)
 
+def run_storage(args):
+    """Run the Storage management module"""
+    if not config_manager.is_enabled('storage.enabled'):
+        logger.info("Storage management is disabled in configuration")
+        return False
+    
+    logger.section("Running Storage Management Module")
+    return manage_storage(args.hass_url, args.hass_token, args.max_log_size, args.max_log_age)
+
+
 def main():
     """Main function to run the selected automation"""
     try:
@@ -226,6 +240,8 @@ def main():
             success = run_alarm_voltage(args)
         elif args.mode == "grocy_dashboard":
             success = run_grocy_dashboard(args)
+        elif args.mode == "storage":
+            success = run_storage(args)
         else:
             logger.error(f"Unknown mode: {args.mode}")
             success = False

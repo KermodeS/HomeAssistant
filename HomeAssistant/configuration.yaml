@@ -1,0 +1,65 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Include other YAML files
+script: !include scripts.yaml
+scene: !include scenes.yaml
+automation: !include automations.yaml
+telegram_bot: !include telegram_bot.yaml
+shell_command: !include shell_command.yaml
+
+# Notifier
+notify:
+  - platform: telegram
+    name: "kermode"
+    chat_id: !secret telegram_kermode_chat_id
+
+# Input entities for configuration
+input_text:
+  grocy_url:
+    name: Grocy API URL
+    initial: !secret grocy_base_url
+  grocy_api_key:
+    name: Grocy API Key
+    initial: !secret grocy_api_key
+  shelly_caldaia_entity:
+    name: Shelly Caldaia Entity
+    initial: !secret shelly_caldaia_switch_entity_id
+
+input_boolean:
+  debug_mode:
+    name: Debug Mode
+    initial: false
+
+# Template sensors
+template:
+  - sensor:
+      - name: "Grocy Script Token"
+        state: !secret grocy_script_token
+        unique_id: grocy_script_token
+
+      - name: "Grocy Chores Message"
+        unique_id: grocy_chores_message
+        state: >-
+          {% set log_content = states('sensor.grocy_log_content') %}
+          {% if log_content and log_content != 'unknown' and log_content != 'unavailable' %}
+            {% set matches = log_content | regex_findall('Sent notification with (\\d+) chores') %}
+            {% if matches %}
+              {{ matches | last | default('No chores') }}
+            {% else %}
+              No chores found in log
+            {% endif %}
+          {% else %}
+            No log data available
+          {% endif %}
+
+command_line:
+  - sensor:
+      name: "Grocy Log Content"
+      unique_id: grocy_log_content
+      command: "cat /config/www/logs/grocy.log 2>/dev/null || echo 'No log file'"
+      scan_interval: 300
