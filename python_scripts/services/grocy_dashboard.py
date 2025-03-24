@@ -69,7 +69,8 @@ def format_chores_for_dashboard(chores):
             "assigned_to": chore.get('assigned_to', 'Unassigned'),
             "description": chore.get('description', ''),
             "territorio": territorio,
-            "luogo_di_lavoro": luogo_di_lavoro
+            "luogo_di_lavoro": luogo_di_lavoro,
+            "type": chore.get('type', 'chore')  # Add type field to distinguish between chores and tasks
         }
         
         # Add sections if available

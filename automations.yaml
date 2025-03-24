@@ -77,6 +77,31 @@
   action:
     - service: shell_command.update_grocy_dashboard
 
+- id: process_grocy_data
+  alias: Process Grocy Data
+  description: "Process Grocy data after dashboard data is updated"
+  trigger:
+    - platform: event
+      event_type: call_service
+      event_data:
+        domain: shell_command
+        service: update_grocy_dashboard
+  action:
+    - delay: "00:00:02"
+    - service: shell_command.process_grocy_data
+
+- id: update_process_grocy_data
+  alias: Update and Process Grocy Data
+  description: "Update the Grocy dashboard data and process it into individual files"
+  trigger:
+    # Update every hour
+    - platform: time_pattern
+      hours: "/1"
+  action:
+    - service: shell_command.update_grocy_dashboard
+    - delay: "00:00:02"
+    - service: shell_command.process_grocy_data
+
 ########  Debug Mode Toggle  ########
 - id: debug_mode_notification
   alias: Debug Mode Toggle
@@ -125,7 +150,6 @@
   action:
     - service: shell_command.check_automation_status
 
-
 ########  Automation for log and storage management  ########
 - id: storage_management_daily
   alias: Daily Storage Management
@@ -136,3 +160,18 @@
   action:
     - service: shell_command.run_storage_management
   mode: single
+
+# Add to automations.yaml
+- id: process_grocy_data
+  alias: Process Grocy Data
+  description: "Process Grocy data after dashboard data is updated"
+  trigger:
+    - platform: event
+      event_type: call_service
+      event_data:
+        domain: shell_command
+        service: update_grocy_dashboard
+  action:
+    - delay: "00:00:02"
+    - service: shell_command.process_grocy_data
+

@@ -4,6 +4,8 @@ default_config:
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
+  extra_module_url:
+    - /local/grocy-dashboard/grocy-chores-card.js
 
 # Include other YAML files
 script: !include scripts.yaml
@@ -155,6 +157,26 @@ template:
               {% endif %}
             ]
 
+      - name: "Grocy Chores"
+        unique_id: grocy_chores
+        state: >-
+          {% set data = states('sensor.grocy_chores_data') %}
+          {% if data and data != '[]' and data != 'unknown' %}
+            {% if data is string %}
+              {% set json_data = data | from_json %}
+              {{ json_data | length if json_data is sequence else 0 }}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:calendar-check
+        attributes:
+          chores: >-
+            {{ states('sensor.grocy_chores_data') }}
+
+            
       - name: "Weather Run Status"
         unique_id: weather_run_status
         state: "unknown"
@@ -213,3 +235,32 @@ command_line:
       unique_id: storage_data_raw
       command: "cat /config/www/data/storage_data.json 2>/dev/null || echo '{}'"
       scan_interval: 3600
+  - sensor:
+      name: "Grocy Chores Data"
+      unique_id: grocy_chores_data
+      command: "cat /config/www/grocy_dashboard_data.json 2>/dev/null || echo '[]'"
+      scan_interval: 300
+      value_template: "{{ 'available' }}"
+      json_attributes:
+        - chores
+      json_attributes_path: "$"
+
+  - sensor:
+      name: "Grocy Summary"
+      unique_id: grocy_summary
+      command: "cat /config/www/grocy_processed/summary.json 2>/dev/null || echo '{\"count\":0,\"has_data\":false}'"
+      value_template: "{{ value_json.count }}"
+      scan_interval: 300
+      json_attributes:
+        - count
+        - has_data
+        - territories
+        - locations
+        - people
+      
+  - sensor:
+      name: "Grocy Index"
+      unique_id: grocy_index
+      command: "cat /config/www/grocy_processed/index.json 2>/dev/null || echo '{}'"
+      value_template: "{{ value_json.keys() | list | length }}"
+      scan_interval: 300

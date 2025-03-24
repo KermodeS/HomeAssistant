@@ -208,7 +208,6 @@ test_grocy_dashboard: >
   --grocy-url "http://example.com" 
   --grocy-api-key "test_key"
 
-
 run_storage_management: >
   /bin/bash /config/python_scripts/run_wrapper.sh 
   --mode storage
@@ -222,3 +221,33 @@ rotate_log_files: >
   --hass-token "{{ states('sensor.grocy_script_token') }}"
   --max-log-size 1024
   --max-log-age 14
+
+check_dashboard_data: bash -c 'python3 /config/python_scripts/debug/check_dashboard_data.py > /config/www/logs/dashboard_data_check.log 2>&1'
+
+# Add to shell_command.yaml
+test_grocy_data_file: bash -c 'echo "Testing data file..." > /config/www/grocy_dashboard_data.json && echo "[{\"name\":\"Test Chore\",\"date\":\"Today\",\"next_execution_assigned_to_name\":\"Test User\",\"track_date_only\":true,\"next_estimated_execution_time\":\"2023-03-21\"}]" >> /config/www/grocy_dashboard_data.json && echo "Test data written to file"'
+
+check_processor_log: bash -c 'cat /config/www/logs/grocy_processor.log 2>/dev/null || echo "No log file found"'
+
+check_input_file: bash -c 'ls -la /config/www/grocy_dashboard_data.json && echo "Content:" && cat /config/www/grocy_dashboard_data.json | head -n 20'
+
+create_basic_test_data: bash -c 'mkdir -p /config/www/grocy_processed && echo "[{\"name\":\"Test Chore\",\"date\":\"Today\",\"assigned_to\":\"Test User\",\"territorio\":\"Test Area\",\"luogo_di_lavoro\":\"Test Location\"}]" > /config/www/grocy_dashboard_data.json && echo "{\"count\":1,\"has_data\":true,\"territories\":[\"Test Area\"],\"locations\":[\"Test Location\"],\"people\":[\"Test User\"]}" > /config/www/grocy_processed/summary.json && echo "{\"0\":\"Test Chore\"}" > /config/www/grocy_processed/index.json && echo "{\"name\":\"Test Chore\",\"date\":\"Today\",\"assigned_to\":\"Test User\",\"territorio\":\"Test Area\",\"luogo_di_lavoro\":\"Test Location\"}" > /config/www/grocy_processed/chore_0.json'
+
+# Add to shell_command.yaml
+check_processed_files: bash -c 'echo "Summary file:" && ls -la /config/www/grocy_processed/summary.json && cat /config/www/grocy_processed/summary.json && echo "Index file:" && ls -la /config/www/grocy_processed/index.json && cat /config/www/grocy_processed/index.json'
+
+# Add to shell_command.yaml
+check_chore_files: bash -c 'echo "Chore 0:" && cat /config/www/grocy_processed/chore_0.json && echo -e "\nChore 1:" && cat /config/www/grocy_processed/chore_1.json && echo -e "\nChore 2:" && cat /config/www/grocy_processed/chore_2.json'
+
+# Add to shell_command.yaml
+check_js_file: bash -c 'ls -la /config/www/grocy-basic-card.js && cat /config/www/grocy-basic-card.js | wc -l'
+
+check_js_file_again:
+  bash -c 'ls -la /config/www/grocy-basic-card.js && cat /config/www/grocy-basic-card.js | wc -l'
+
+  # Add to shell_command.yaml
+#process_grocy_data:
+#  bash -c 'python3 /config/python_scripts/grocy_data_processor.py > /config/www/logs/grocy_processor.log 2>&1'
+
+# Add to shell_command.yaml
+process_grocy_data: python3 /config/python_scripts/process_grocy_data.py > /config/www/logs/grocy_processor.log 2>&1

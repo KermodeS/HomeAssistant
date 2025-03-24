@@ -11,6 +11,7 @@ This is a modular Python-based automation system for Home Assistant that handles
 - **Grocy Integration**: Fetches chores and sends notifications
 - **Weather Forecasting**: Provides temperature forecasts and extreme weather alerts
 - **Device Monitoring**: Tracks device status changes (e.g., Shelly relay switches)
+- **Voltage Monitoring**: Monitors voltage levels and sends alerts when thresholds are crossed
 
 The system is designed to be:
 
@@ -19,23 +20,27 @@ The system is designed to be:
 - **Extensible**: New modules can be added without changing existing ones
 - **Self-healing**: Contains debugging tools to troubleshoot issues
 - **Robust**: Includes retry logic, log rotation, and comprehensive error handling
+- **Visual**: Provides dashboard components for monitoring and interaction
 
 ## Directory Structure
 
 ```
 /config/python_scripts/
 ├── common/                 # Common utilities
-│   ├── init.py
+│   ├── __init__.py
 │   ├── config_manager.py   # Configuration management
 │   ├── logger.py           # Logging functionality
 │   └── notification.py     # Notification services (Telegram)
 ├── services/               # Service modules
-│   ├── init.py
+│   ├── __init__.py
 │   ├── grocy.py            # Grocy integration
+│   ├── grocy_dashboard.py  # Grocy dashboard data provider
 │   ├── weather.py          # Weather forecasting
-│   └── devices.py          # Device monitoring
+│   ├── devices.py          # Device monitoring
+│   ├── alarm_voltage_measure.py # Voltage monitoring
+│   └── storage.py          # Storage management
 ├── debug/                  # Debugging tools
-│   ├── init.py
+│   ├── __init__.py
 │   ├── grocy_debug.py      # Grocy API testing
 │   ├── telegram_debug.py   # Telegram notification testing
 │   └── weather_debug.py    # Weather API testing
@@ -43,10 +48,17 @@ The system is designed to be:
 ├── run.py                  # Main entry point
 ├── run_wrapper.sh          # Shell wrapper
 ├── diagnose.py             # System diagnostics
-├── automation_check.py     # Automation diagnostics
-├── log_manager.py          # Log management
-├── test_automations.py     # Manual testing utility
+├── process_grocy_data.py   # Grocy data processor for dashboard
 └── token_reader.py         # Token reading utility
+
+/config/www/
+├── grocy_dashboard_data.json # Raw Grocy data
+├── grocy_processed/        # Processed data for dashboard
+│   ├── summary.json        # Summary of all chores
+│   ├── index.json          # Index of chore IDs to names
+│   └── chore_*.json        # Individual chore files
+├── grocy-dynamic-card.js   # Dashboard card for Grocy chores
+└── logs/                   # Log files for all modules
 ```
 
 Main Components
@@ -55,6 +67,15 @@ Main Components
 The main entry point for all automation tasks. It processes command-line arguments and calls the appropriate service module.
 Purpose: Centralizes execution and handles command-line arguments
 Operation:
+
+Modes:
+
+- grocy: Fetches chores from Grocy and sends notifications
+- weather: Processes weather data and sends forecasts/alerts
+- device: Monitors device status changes
+- alarm_voltage: Monitors voltage levels and sends alerts
+- grocy_dashboard: Updates dashboard data from Grocy
+- storage: Manages log files and storage
 
 Parses command-line arguments for module selection and parameters
 Loads the appropriate module based on the --mode parameter
@@ -92,6 +113,72 @@ Creates and manages log files based on module being run
 Captures return codes and logs execution details
 Rotates log files when they get too large
 
+2. Dashboard Components
+/config/python_scripts/services/grocy_dashboard.py
+
+Provides data for the Grocy dashboard card.
+Functions:
+
+- format_chores_for_dashboard: Formats chore data for the dashboard
+- save_dashboard_data: Saves formatted data to JSON file
+- update_dashboard_data: Updates the dashboard data from Grocy
+
+/config/python_scripts/process_grocy_data.py
+Processes the raw Grocy data into individual files for the dashboard card.
+Process:
+
+1. Reads /config/www/grocy_dashboard_data.json
+2. Creates summary and index files
+3. Splits data into individual chore files
+4. Saves all files to /config/www/grocy_processed/
+
+/config/www/grocy-dynamic-card.js
+Custom Lovelace card for displaying and filtering Grocy chores.
+Features:
+
+- Displays chores with detailed information
+- Filters by Territory, Location, and Person
+- Color-coding for due dates
+- Distinguishes between chores and tasks
+
+Dashboard Integration
+Grocy Chores Dashboard
+The system includes a custom dashboard for Grocy chores with filtering capabilities.
+Setup:
+
+1. Data Flow:
+
+- update_grocy_dashboard shell command fetches data from Grocy
+- process_grocy_data processes this into smaller files
+- Dashboard card reads these files and displays them
+
+
+2. Adding the Card:
+
+- Go to Dashboard > Edit Dashboard > Add Card > Manual
+- ADD: 
+type: custom:grocy-dynamic-card
+title: Grocy Chores and Tasks
+
+3. Automation:
+
+- An hourly automation updates the dashboard
+
+- id: update_process_grocy_data
+  alias: Update and Process Grocy Data
+  trigger:
+    - platform: time_pattern
+      hours: "/1"
+  action:
+    - service: shell_command.update_grocy_dashboard
+    - delay: "00:00:02"
+    - service: shell_command.process_grocy_data
+
+
+**Configuration**
+
+/config/python_scripts/feature_flags.yaml
+
 Feature Flags
 The feature_flags.yaml file controls which features are enabled:
 yamlCopyweather:
@@ -106,6 +193,8 @@ devices:
 grocy:
   enabled: true  # Master switch for Grocy integration
   chores_notification: true  # Daily chores notifications
+  dashboard_enabled: true  # Enable dashboard integration
+
 
 voltage_monitoring:
   enabled: true  # Master switch for voltage monitoring
@@ -119,6 +208,7 @@ notifications:
 
 debug:
   verbose_logging: true  # Enable detailed logging
+
 To disable a feature, set its value to false. The changes take effect immediately without restarting Home Assistant.
 Available Modules
 Weather Module
@@ -137,8 +227,8 @@ Verify the weather entity exists and has forecast data
 Grocy Module
 Integrates with Grocy to:
 
-Check for upcoming chores
-Send formatted notifications with details
+- Check for upcoming chores
+- Send formatted notifications with details
 
 Troubleshooting:
 
@@ -253,6 +343,73 @@ Add Shell Commands: Update shell_command.yaml with commands to invoke your modul
 Add Automations: Update automations.yaml if you want automatic execution
 Create Debug Tool: Add a debug script in /config/python_scripts/debug/ for testing
 Update Documentation: Add details about your module to this README
+
+**Adding Custom Cards**
+When creating custom cards for the dashboard:
+
+1. File Placement:
+
+Save JavaScript files to /config/www/
+For complex cards with multiple files, create a subdirectory
+
+
+2. Registration:
+
+Go to Settings > Dashboards > Resources
+Add URL: /local/your-card-name.js
+Type: JavaScript Module
+
+
+3. Card Implementation:
+
+Use class-based custom elements
+Implement setConfig and set hass methods
+Register with customElements.define
+Add to window.customCards array
+
+
+4. Data Processing:
+
+For large datasets, split data into smaller files
+Use summary and index files for efficient loading
+Process data server-side with Python scripts
+
+
+
+Troubleshooting
+Dashboard Issues
+
+- Card Not Found: Check if the JavaScript file exists and is registered as a resource
+- No Data Showing: Run shell_command.update_grocy_dashboard and shell_command.process_grocy_data
+- JavaScript Errors: Open browser developer tools (F12) > Console to see errors
+
+Common Issues
+
+- File Permissions: Ensure files are readable with chmod 644 /config/www/*.js
+- YAML Syntax: Check for proper indentation in configuration files
+- Missing Data: Verify that source data files exist and have content
+- Resource Conflicts: Remove duplicate resource entries
+
+Extending the System
+To add a new dashboard component:
+
+1. Create a data provider in /config/python_scripts/services/
+2. Add a processor script if needed
+3. Create a JavaScript card file in /config/www/
+4. Register the card as a resource
+5. Add automations to update the data regularly
+6. Add the card to your dashboard using the Raw Configuration Editor
+
+Best Practices
+
+1. Start Simple: Begin with minimal functionality that works
+2. Test Incrementally: Test each step before adding complexity
+3. Use Static Data: Initially test with static data before connecting to real sources
+4. Check File Loading: Verify resources load correctly in browser dev tools
+5. Handle Large Data: Split large datasets into smaller files
+6. Use Raw Configuration: Add custom cards using the Raw Configuration Editor
+7. Keep Cards Isolated: Use unique names for custom elements to avoid conflicts
+
 
 Maintenance
 Regular Tasks

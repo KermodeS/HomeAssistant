@@ -1,49 +1,63 @@
 {
   "logs": {
-    "total_size": 179128911,
-    "total_size_human": "170.83 MB",
-    "file_count": 27,
+    "total_size": 452395021,
+    "total_size_human": "431.44 MB",
+    "file_count": 30,
     "files": [
       {
         "name": "wrapper.log",
-        "size": 61456482,
-        "size_human": "60016.10 KB",
-        "last_modified": "2025-03-19 14:48:05",
-        "days_old": 0
-      },
-      {
-        "name": "alarm_voltage.log",
-        "size": 47808711,
-        "size_human": "46688.19 KB",
-        "last_modified": "2025-03-19 14:48:01",
-        "days_old": 0
-      },
-      {
-        "name": "notification.log",
-        "size": 38198510,
-        "size_human": "37303.23 KB",
-        "last_modified": "2025-03-19 14:48:06",
-        "days_old": 0
-      },
-      {
-        "name": "run.log",
-        "size": 30725092,
-        "size_human": "30004.97 KB",
-        "last_modified": "2025-03-19 14:48:06",
-        "days_old": 0
-      },
-      {
-        "name": "grocy.log",
-        "size": 620867,
-        "size_human": "606.32 KB",
-        "last_modified": "2025-03-19 14:00:02",
+        "size": 141270978,
+        "size_human": "137959.94 KB",
+        "last_modified": "2025-03-24 02:00:00",
         "days_old": 0
       },
       {
         "name": "main.log",
-        "size": 111123,
-        "size_human": "108.52 KB",
-        "last_modified": "2025-03-19 14:48:06",
+        "size": 116438102,
+        "size_human": "113709.08 KB",
+        "last_modified": "2025-03-24 02:00:01",
+        "days_old": 0
+      },
+      {
+        "name": "alarm_voltage.log",
+        "size": 79668092,
+        "size_human": "77800.87 KB",
+        "last_modified": "2025-03-24 01:59:56",
+        "days_old": 0
+      },
+      {
+        "name": "notification.log",
+        "size": 63420174,
+        "size_human": "61933.76 KB",
+        "last_modified": "2025-03-24 02:00:01",
+        "days_old": 0
+      },
+      {
+        "name": "run.log",
+        "size": 49752800,
+        "size_human": "48586.72 KB",
+        "last_modified": "2025-03-24 02:00:01",
+        "days_old": 0
+      },
+      {
+        "name": "grocy.log",
+        "size": 1546886,
+        "size_human": "1510.63 KB",
+        "last_modified": "2025-03-24 01:00:01",
+        "days_old": 0
+      },
+      {
+        "name": "grocy_dashboard.log",
+        "size": 104299,
+        "size_human": "101.85 KB",
+        "last_modified": "2025-03-24 01:00:01",
+        "days_old": 0
+      },
+      {
+        "name": "notifications.log",
+        "size": 45795,
+        "size_human": "44.72 KB",
+        "last_modified": "2025-03-23 19:13:39",
         "days_old": 0
       },
       {
@@ -51,48 +65,41 @@
         "size": 45523,
         "size_human": "44.46 KB",
         "last_modified": "2025-03-12 10:39:28",
-        "days_old": 7
-      },
-      {
-        "name": "notifications.log",
-        "size": 39514,
-        "size_human": "38.59 KB",
-        "last_modified": "2025-03-19 12:01:02",
-        "days_old": 0
-      },
-      {
-        "name": "grocy_dashboard.log",
-        "size": 33045,
-        "size_human": "32.27 KB",
-        "last_modified": "2025-03-19 14:00:02",
-        "days_old": 0
+        "days_old": 11
       },
       {
         "name": "grocy_debug.log",
         "size": 26015,
         "size_human": "25.41 KB",
         "last_modified": "2025-03-03 11:58:20",
-        "days_old": 16
+        "days_old": 20
       },
       {
         "name": "devices.log",
-        "size": 17405,
-        "size_human": "17.00 KB",
-        "last_modified": "2025-03-19 12:01:02",
+        "size": 20673,
+        "size_human": "20.19 KB",
+        "last_modified": "2025-03-23 19:13:39",
         "days_old": 0
       },
       {
         "name": "weather.log",
-        "size": 14515,
-        "size_human": "14.17 KB",
-        "last_modified": "2025-03-19 08:05:02",
+        "size": 16603,
+        "size_human": "16.21 KB",
+        "last_modified": "2025-03-23 08:05:01",
+        "days_old": 0
+      },
+      {
+        "name": "storage.log",
+        "size": 8735,
+        "size_human": "8.53 KB",
+        "last_modified": "2025-03-24 02:00:01",
         "days_old": 0
       },
       {
         "name": "grocy_run.log",
-        "size": 5697,
-        "size_human": "5.56 KB",
-        "last_modified": "2025-03-19 08:06:02",
+        "size": 7051,
+        "size_human": "6.89 KB",
+        "last_modified": "2025-03-23 08:06:01",
         "days_old": 0
       },
       {
@@ -100,55 +107,55 @@
         "size": 4674,
         "size_human": "4.56 KB",
         "last_modified": "2025-03-12 10:20:37",
-        "days_old": 7
-      },
-      {
-        "name": "storage.log",
-        "size": 3998,
-        "size_human": "3.90 KB",
-        "last_modified": "2025-03-19 14:48:06",
-        "days_old": 0
+        "days_old": 11
       },
       {
         "name": "weather_debug.log",
         "size": 3478,
         "size_human": "3.40 KB",
         "last_modified": "2025-03-03 12:44:45",
-        "days_old": 16
+        "days_old": 20
       },
       {
         "name": "error.log",
         "size": 2864,
         "size_human": "2.80 KB",
         "last_modified": "2025-03-03 10:35:24",
-        "days_old": 16
+        "days_old": 20
       },
       {
         "name": "grocy_dashboard_run.log",
         "size": 2767,
         "size_human": "2.70 KB",
         "last_modified": "2025-03-17 15:00:05",
-        "days_old": 1
+        "days_old": 6
       },
       {
         "name": "shell_test.log",
         "size": 2194,
         "size_human": "2.14 KB",
         "last_modified": "2025-03-03 10:12:04",
-        "days_old": 16
+        "days_old": 20
       },
       {
         "name": "telegram_debug.log",
         "size": 1707,
         "size_human": "1.67 KB",
         "last_modified": "2025-03-03 12:18:33",
-        "days_old": 16
+        "days_old": 20
       },
       {
         "name": "weather_run.log",
         "size": 1694,
         "size_human": "1.65 KB",
-        "last_modified": "2025-03-19 08:05:02",
+        "last_modified": "2025-03-23 08:05:01",
+        "days_old": 0
+      },
+      {
+        "name": "automation_run.log",
+        "size": 1118,
+        "size_human": "1.09 KB",
+        "last_modified": "2025-03-24 02:00:01",
         "days_old": 0
       },
       {
@@ -156,53 +163,67 @@
         "size": 1096,
         "size_human": "1.07 KB",
         "last_modified": "2025-02-28 13:09:10",
-        "days_old": 19
+        "days_old": 23
       },
       {
         "name": "device_run.log",
         "size": 1085,
         "size_human": "1.06 KB",
-        "last_modified": "2025-03-19 12:01:03",
+        "last_modified": "2025-03-23 19:13:39",
         "days_old": 0
       },
       {
-        "name": "automation_run.log",
-        "size": 778,
-        "size_human": "0.76 KB",
-        "last_modified": "2025-03-19 14:48:06",
-        "days_old": 0
+        "name": "dashboard_data_check.log",
+        "size": 469,
+        "size_human": "0.46 KB",
+        "last_modified": "2025-03-21 21:10:15",
+        "days_old": 2
       },
       {
         "name": "voltage_debug.log",
         "size": 118,
         "size_human": "0.12 KB",
         "last_modified": "2025-03-12 00:08:11",
-        "days_old": 7
+        "days_old": 12
       },
       {
         "name": "test_telegram.log",
         "size": 117,
         "size_human": "0.11 KB",
         "last_modified": "2025-03-11 23:49:04",
-        "days_old": 7
+        "days_old": 12
+      },
+      {
+        "name": "grocy_repair.log",
+        "size": 40,
+        "size_human": "0.04 KB",
+        "last_modified": "2025-03-21 11:18:28",
+        "days_old": 2
+      },
+      {
+        "name": "grocy_processor.log",
+        "size": 32,
+        "size_human": "0.03 KB",
+        "last_modified": "2025-03-24 01:00:04",
+        "days_old": 0
       },
       {
         "name": "log_manager.log",
         "size": 0,
         "size_human": "0.00 KB",
         "last_modified": "2025-03-17 11:11:16",
-        "days_old": 2
+        "days_old": 6
       }
     ]
   },
   "disk": {
     "total": 30017880064,
     "total_human": "27.96 GB",
-    "used": 7348985856,
-    "used_human": "6.84 GB",
-    "used_percent": "24.5%",
-    "free": 21409124352,
-    "free_human": "19.94 GB"
+    "used": 7579090944,
+    "used_human": "7.06 GB",
+    "used_percent": "25.2%",
+    "free": 21179019264,
+    "free_human": "19.72 GB"
   },
   "rotation": {
     "rotated_count": 0,
@@ -210,5 +231,5 @@
     "reclaimed_space_human": "0.00 MB",
     "rotated_files": []
   },
-  "timestamp": "2025-03-19 14:48:06"
+  "timestamp": "2025-03-24 02:00:01"
 }
